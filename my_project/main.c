@@ -1,4 +1,3 @@
-// 403106765
 #include<stdio.h>
 #include<stdlib.h>
 #include<ncurses.h>
@@ -16,7 +15,9 @@ int main(){
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
-    // noecho();
+
+
+    print_borders();
 
     printw("Hello!\n");
     if(!has_colors()){
@@ -27,7 +28,7 @@ int main(){
     refresh();
     int count = 0;
     while(1){
-        mvprintw(0,0,"hey! count is %d\n", count);
+        mvprintw(1,1,"hey! count is %d\n", count);
         char c = getch();
         count++;
         if(c == 'q') break;
