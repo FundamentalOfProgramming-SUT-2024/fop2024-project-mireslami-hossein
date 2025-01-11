@@ -9,7 +9,7 @@ gcc main.c -o game.out -lncurses && ./game.out
 #include<stdlib.h>
 #include<ncurses.h>
 
-// #include "basic_loads.h"
+#include "basic_loads.h"
 #include "login.c"
 
 typedef struct
@@ -23,15 +23,17 @@ int main(){
     cbreak();
     keypad(stdscr, TRUE);
     noecho();
-
-    // game_initalize();
-    load_login_page();
+    curs_set(FALSE);
 
     if(!has_colors()){
         endwin();
         printf("Sorry! Your Terminal Doesn't support colors!\n");
         return 0;
     }
+
+    // game_initalize();
+    load_login_page();
+
     refresh();
     
     endwin();

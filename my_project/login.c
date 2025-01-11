@@ -5,8 +5,8 @@
 #include "basic_loads.h"
 
 
-char login_messages[2][50] = {
-    "Welcome!", "Choose a way to continue: (press Q to exit)"
+char login_messages[3][50] = {
+    "Welcome!", "Choose a way to continue:", "(Q to exit)"
 };
 
 char login_items[2][50] = {
@@ -14,7 +14,7 @@ char login_items[2][50] = {
 };
 
 void print_messages(WINDOW* w, char ms[][50], int size, int y, int x){
-    attron(COLOR_PAIR(MESSAGE_COLOR));
+    wattron(w, COLOR_PAIR(MESSAGE_COLOR));
     for(int i = 0; i < size; i ++){
         int ms_len = strlen(ms[i]);
         int x_m = x - ms_len/2;
@@ -22,33 +22,34 @@ void print_messages(WINDOW* w, char ms[][50], int size, int y, int x){
         mvwprintw(w,y_m, x_m, "%s", ms[i]);
     }
     wrefresh(w);
-    attroff(COLOR_PAIR(MESSAGE_COLOR));
+    wattroff(w, COLOR_PAIR(MESSAGE_COLOR));
 }
 
 void print_buttons(WINDOW* w, char btns[][50], int size,int selected, int y, int x){
-    attron(A_BOLD);
+    wattron(w, A_BOLD);
+    
     for(int i = 0; i < size; i ++){
         int btn_len = strlen(btns[i]);
         int x_m = x - btn_len/2;
         int y_m = y + i*2 + 1;
         if(i == selected){
-            attron(A_REVERSE);
+            wattron(w, COLOR_PAIR(BTN_SELECTED));
             mvwprintw(w,y_m, x_m, "%s", btns[i]);
-            attroff(A_REVERSE);
+            wattroff(w, COLOR_PAIR(BTN_SELECTED));
         } else{
-            attron(COLOR_PAIR(BUTTONS_DEFAULT));
+            wattron(w, COLOR_PAIR(BTN_DEFAULT));
             mvwprintw(w,y_m, x_m, "%s", btns[i]);
-            attroff(COLOR_PAIR(BUTTONS_DEFAULT));
+            wattroff(w, COLOR_PAIR(BTN_DEFAULT));
         }
     }
     wrefresh(w);
-    attroff(COLOR_PAIR(BUTTONS_DEFAULT));
-    attroff(A_BOLD);
+    wattroff(w, A_BOLD);
 }
 
 
 void handle_selected_btn(int* selected, int size, int* flag){
     int ch = getch();
+
     switch (ch)
     {
     case KEY_UP:
@@ -60,7 +61,7 @@ void handle_selected_btn(int* selected, int size, int* flag){
         if(*selected >= size) *selected = 0;
         break;
     
-    case KEY_ENTER:
+    case 10: case 13:
         *flag = 1;
         break;
     
@@ -70,20 +71,24 @@ void handle_selected_btn(int* selected, int size, int* flag){
 }
 
 void open_form(int selected){
+    clear();
     mvprintw(LINES/2, COLS/2, "WELCOME TO SECOND PAGE!!!");
+    refresh();
 }
 
 void load_login_page(){
     clear();
 
+    bkgd(COLOR_PAIR(BG_LOGIN));
     start_color();
     game_initalize();
 
     int selected_btn = 0;
     int exit_flag = 0;
     int btn_nums = 2;
+    int message_num = 3;
 
-    int height = 18, width = 25;
+    int height = 18, width = 35;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
     WINDOW* menu = newwin(height , width,y,x);
@@ -91,8 +96,8 @@ void load_login_page(){
     refresh();
     
     while(!exit_flag){
-        print_messages(menu, login_messages, 2, 1, width/2);
-        print_buttons(menu, login_items, btn_nums, selected_btn, 7, width/2);
+        print_messages(menu, login_messages, message_num, 1, width/2);
+        print_buttons(menu, login_items, btn_nums, selected_btn, 9, width/2);
         
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);
     }
@@ -100,7 +105,9 @@ void load_login_page(){
     if(exit_flag == -1){
         endwin();
     }
-
+    if(exit_flag == 1){
+        getch();
+    }
     delwin(menu);
     open_form(selected_btn);
 }
