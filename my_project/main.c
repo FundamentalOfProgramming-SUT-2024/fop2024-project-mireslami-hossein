@@ -1,8 +1,15 @@
+/*
+To Run The GAME compile it by entering this command in terminal:
+
+gcc main.c -o game.out -lncurses && ./game.out
+
+*/ 
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<ncurses.h>
 
-#include "basic_loads.c"
+// #include "basic_loads.h"
 #include "login.c"
 
 typedef struct
@@ -15,24 +22,17 @@ int main(){
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
+    noecho();
 
+    // game_initalize();
+    load_login_page();
 
-    print_borders();
-
-    printw("Hello!\n");
     if(!has_colors()){
         endwin();
         printf("Sorry! Your Terminal Doesn't support colors!\n");
         return 0;
     }
     refresh();
-    int count = 0;
-    while(1){
-        mvprintw(1,1,"hey! count is %d\n", count);
-        char c = getch();
-        count++;
-        if(c == 'q') break;
-        refresh();
-    }
+    
     endwin();
 }
