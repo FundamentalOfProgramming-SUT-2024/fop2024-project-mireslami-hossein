@@ -25,7 +25,7 @@ void game_initalize(){
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
     init_pair(BTN_SELECTED,COLOR_BLACK , COLOR_CYAN);
-    init_pair(BG_LOGIN, COLOR_WHITE, COLOR_PURPLE);
+    init_pair(BG_LOGIN, COLOR_PURPLE, COLOR_PURPLE);
 }
 
 #endif

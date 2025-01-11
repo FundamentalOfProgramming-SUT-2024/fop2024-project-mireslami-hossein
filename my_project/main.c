@@ -1,7 +1,7 @@
 /*
 To Run The GAME compile it by entering this command in terminal:
 
-gcc main.c -o game.out -lncurses && ./game.out
+gcc main.c -o game.out -lncurses -lcjson && ./game.out
 
 */ 
 
@@ -31,8 +31,8 @@ int main(){
         return 0;
     }
 
-    // game_initalize();
-    load_login_page();
+    game_initalize();
+    load_first_page();
 
     refresh();
     

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
+#include "cjson/cJSON.h"
 #include "basic_loads.h"
 
 
@@ -11,6 +12,14 @@ char login_messages[3][50] = {
 
 char login_items[2][50] = {
     "Sign Up", "Login"
+};
+
+char register_form_labels[4][50] = {
+    "Username: ", "Password: ", "Email: ", "checker Word: "
+};
+
+char login_form_labels[4][50] = {
+    "Username: ", "Password: "
 };
 
 void print_messages(WINDOW* w, char ms[][50], int size, int y, int x){
@@ -46,7 +55,6 @@ void print_buttons(WINDOW* w, char btns[][50], int size,int selected, int y, int
     wattroff(w, A_BOLD);
 }
 
-
 void handle_selected_btn(int* selected, int size, int* flag){
     int ch = getch();
 
@@ -70,16 +78,46 @@ void handle_selected_btn(int* selected, int size, int* flag){
     }
 }
 
+
+void signup_user(){
+    int width = 46, height = 26;
+    int y = LINES/2 - height/2;
+    int x = COLS/2 - width/2;
+    WINDOW* sign_form = newwin(height, width, y, x);
+    box(sign_form, 0, 0);
+    refresh();
+    
+    char title[20] = "Sign Up";
+    // start_color();
+    init_pair(1, COLOR_CYAN, COLOR_BLACK);
+    attron(COLOR_PAIR(1));
+    attron(A_BOLD);
+    mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
+    attroff(A_BOLD);
+    attroff(COLOR_PAIR(1));
+    
+    mvwprintw(sign_form,5,3, "Username: aliahmadi_yadollahi");
+    refresh();
+    wrefresh(sign_form);
+
+    int c = getch();
+    
+}
+
 void open_form(int selected){
     clear();
-    mvprintw(LINES/2, COLS/2, "WELCOME TO SECOND PAGE!!!");
+    // Sign Up
+    if(selected == 0){
+        signup_user();
+    } else if(selected == 1){
+        // login_user();
+    }
     refresh();
 }
 
-void load_login_page(){
+void load_first_page(){
     clear();
 
-    bkgd(COLOR_PAIR(BG_LOGIN));
     start_color();
     game_initalize();
 
@@ -92,8 +130,11 @@ void load_login_page(){
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
     WINDOW* menu = newwin(height , width,y,x);
+    wrefresh(menu);
+    wbkgd(menu, COLOR_PAIR(BG_LOGIN)); //doesn't work
     box(menu, 0, 0);
     refresh();
+
     
     while(!exit_flag){
         print_messages(menu, login_messages, message_num, 1, width/2);
@@ -105,9 +146,7 @@ void load_login_page(){
     if(exit_flag == -1){
         endwin();
     }
-    if(exit_flag == 1){
-        getch();
-    }
+
     delwin(menu);
     open_form(selected_btn);
 }
