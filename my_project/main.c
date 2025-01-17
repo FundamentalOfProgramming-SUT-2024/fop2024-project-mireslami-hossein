@@ -5,9 +5,9 @@ gcc main.c -o game.out -lncurses -lcjson && ./game.out
 
 */ 
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<ncurses.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ncurses.h>
 
 #include "basic_loads.h"
 #include "login.c"

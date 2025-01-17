@@ -5,11 +5,14 @@
 #include<stdlib.h>
 #include<ncurses.h>
 
+// MAX_SIZES
+#define MAX_USERNAME 15
 // New COLORS
 #define COLOR_PURPLE 10
 #define CUSTOM_RED 11
 #define CUSTOM_CYAN 12
 #define CUSTOM_GREEN 13
+#define CUSTOM_ORANGE 14
 
 // New PAIRS
 #define BG_LOGIN 0
@@ -18,6 +21,7 @@
 #define BTN_SELECTED 3
 #define HEADER_COLOR 4
 #define TEXT_COLOR 5
+#define LABEL_COLOR 5
 
 void add_color_rgb(int id, int r, int g, int b){
     start_color();
@@ -30,6 +34,7 @@ void game_initalize(){
     add_color_rgb(CUSTOM_RED, 203, 35, 44);
     add_color_rgb(CUSTOM_GREEN, 93, 255, 101);
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
+    add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
@@ -37,6 +42,7 @@ void game_initalize(){
     init_pair(BG_LOGIN, COLOR_PURPLE, COLOR_PURPLE);
     init_pair(HEADER_COLOR, CUSTOM_CYAN, COLOR_BLACK);
     init_pair(TEXT_COLOR, COLOR_WHITE, COLOR_BLACK);
+    init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
 }
 
 #endif
