@@ -15,33 +15,33 @@ char login_items[2][50] = {
 };
 
 char signup_form_labels[4][50] = {
-    "Username: ", "Password: ", "Email: ", "Checker Word (recommended): "
+    "Username*: ", "Password*: ", "Email*: ", "Checker Word: "
 };
 
 char login_form_labels[4][50] = {
     "Username: ", "Password: "
 };
 
-void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char* type, int color_id){
+void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
     wattron(w, COLOR_PAIR(color_id));
-    if(strcmp(type, "center") == 0){
+    if(type == 'c'){
         for(int i = 0; i < size; i++){
             int ms_len = strlen(ms[i]);
             int x_m = x - ms_len/2;
-            int y_m = y + i*2 + 1;
+            int y_m = y + i*2;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
-    } else if(strcmp(type, "right") == 0){
+    } else if(type == 'r'){
         for(int i = 0; i < size; i++){
             int ms_len = strlen(ms[i]);
             int x_m = x - ms_len;
-            int y_m = y + i*2 + 1;
+            int y_m = y + i*2;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
-    } else if(strcmp(type, "left") == 0){
+    } else if(type == 'l'){
         for(int i = 0; i < size; i++){
             int x_m = x;
-            int y_m = y + i*2 + 1;
+            int y_m = y + i*2;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
     }
@@ -117,15 +117,11 @@ bool does_user_exist(char* name){
     return FALSE;
 }
 
-void get_username(WINDOW* sign_form, int height, int width, char* username){
-    int x_start_label = 6;
-    int y = 7;
+void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
     int c = 0;
     while(1){
-        clear_part(sign_form, y, x_start_label + strlen(username), y, width - 2);
-        // wattron(sign_form, COLOR_PAIR(LABEL_COLOR) | A_BOLD);
-        // mvwprintw(sign_form, y, x_start_label, "%s", login_form_labels[0]);
-        // wattroff(sign_form, COLOR_PAIR(LABEL_COLOR)| A_BOLD);
+        clear_part(sign_form, y, x, y, width - 2);
+        wmove(sign_form, y, x);
         curs_set(TRUE);
         echo();
         wrefresh(sign_form);
@@ -134,13 +130,13 @@ void get_username(WINDOW* sign_form, int height, int width, char* username){
 
         if(does_user_exist(username)){
             print_error_message(sign_form, height, width, "This Username has already taken!");
-            int x_end_of_username = x_start_label + strlen(login_form_labels[0]) + strlen(username);
-            wmove(sign_form, y, x_end_of_username);
+            wmove(sign_form, y, x);
 
         } else{
             char text[50];
             sprintf(text, "Username %s added successfully!", username);
             print_error_message(sign_form, height, width, text);
+            curs_set(FALSE);
             break;
         }
     }
@@ -160,9 +156,10 @@ void signup_user(){
     mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
     wattroff(sign_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
     
+    print_messages(sign_form, signup_form_labels, 4, 6, 18, 'r', LABEL_COLOR);
 
     char *username = (char *)malloc((MAX_USERNAME+5) * sizeof(char));
-    get_username(sign_form, height, width, username);
+    get_username(sign_form, height, width, 6, 18, username);
     
     refresh();
     wrefresh(sign_form);
@@ -205,7 +202,7 @@ void load_first_page(){
 
     
     while(!exit_flag){
-        print_messages(menu, login_messages, message_num, 1, width/2);
+        print_messages(menu, login_messages, message_num, 2, width/2, 'c', HEADER_COLOR);
         print_buttons(menu, login_items, btn_nums, selected_btn, 9, width/2);
         
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);

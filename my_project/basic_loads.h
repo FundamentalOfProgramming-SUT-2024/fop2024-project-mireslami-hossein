@@ -28,6 +28,15 @@ void add_color_rgb(int id, int r, int g, int b){
     init_color(id, r*1000/255, g*1000/255, b*1000/255);
 }
 
+void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
+    for(int j = y1; j <= y2; j++){
+        for(int i = x1; i <= x2; i++){
+            mvwaddch(w, j, i, ' ');
+        }
+    }
+    wrefresh(w);
+}
+
 void game_initalize(){
     start_color();
     add_color_rgb(COLOR_PURPLE, 71, 50, 122);
