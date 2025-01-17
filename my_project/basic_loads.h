@@ -15,6 +15,7 @@
 #define MESSAGE_COLOR 1
 #define BTN_DEFAULT 2
 #define BTN_SELECTED 3
+#define TEXT_COLOR 4
 
 void game_initalize(){
     start_color();
@@ -26,6 +27,7 @@ void game_initalize(){
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
     init_pair(BTN_SELECTED,COLOR_BLACK , COLOR_CYAN);
     init_pair(BG_LOGIN, COLOR_PURPLE, COLOR_PURPLE);
+    init_pair(TEXT_COLOR, COLOR_WHITE, COLOR_BLACK);
 }
 
 #endif

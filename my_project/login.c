@@ -88,20 +88,19 @@ void signup_user(){
     refresh();
     
     char title[20] = "Sign Up";
-    // start_color();
-    init_pair(1, COLOR_CYAN, COLOR_BLACK);
-    attron(COLOR_PAIR(1));
-    attron(A_BOLD);
+    start_color();
+    wattron(sign_form, COLOR_PAIR(TEXT_COLOR));
+    wattron(sign_form, A_BOLD);
     mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
-    attroff(A_BOLD);
-    attroff(COLOR_PAIR(1));
+    wattroff(sign_form, A_BOLD);
+    wattroff(sign_form, COLOR_PAIR(TEXT_COLOR));
     
     mvwprintw(sign_form,5,3, "Username: aliahmadi_yadollahi");
     refresh();
     wrefresh(sign_form);
 
+
     int c = getch();
-    
 }
 
 void open_form(int selected){
