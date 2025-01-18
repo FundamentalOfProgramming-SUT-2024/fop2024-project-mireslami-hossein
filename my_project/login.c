@@ -118,30 +118,6 @@ bool does_user_exist(char* name){
     return FALSE;
 }
 
-// Signup Form Handeling
-void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
-    while(1){
-        clear_part(sign_form, y, x, y, width - 2);
-        wmove(sign_form, y, x);
-        curs_set(TRUE);
-        echo();
-        wrefresh(sign_form);
-
-        wgetnstr(sign_form , username, MAX_USERNAME);
-
-        if(does_user_exist(username)){
-            print_error_message(sign_form, height, width, y, x, "This Username has already taken!");
-        } else if(strlen(username) == 0){
-            print_error_message(sign_form, height, width, y, x, "Username box must be completed!");
-        }
-         else{
-            curs_set(FALSE);
-            break;
-        }
-    }
-    clear_part(sign_form, height-2, 1, height-2, width - 2);
-}
-
 bool password_validated(WINDOW* w, int height, int width, int y, int x, char* password){
     bool min_len = FALSE, int_included = FALSE,
          lower_included = FALSE, upper_included = FALSE;
@@ -170,6 +146,30 @@ bool password_validated(WINDOW* w, int height, int width, int y, int x, char* pa
         return FALSE;
     }
     return TRUE;
+}
+
+// Signup Form Handeling
+void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
+    while(1){
+        clear_part(sign_form, y, x, y, width - 2);
+        wmove(sign_form, y, x);
+        curs_set(TRUE);
+        echo();
+        wrefresh(sign_form);
+
+        wgetnstr(sign_form , username, MAX_USERNAME);
+
+        if(does_user_exist(username)){
+            print_error_message(sign_form, height, width, y, x, "This Username has already taken!");
+        } else if(strlen(username) == 0){
+            print_error_message(sign_form, height, width, y, x, "Username box must be completed!");
+        }
+         else{
+            curs_set(FALSE);
+            break;
+        }
+    }
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
 }
 
 void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
