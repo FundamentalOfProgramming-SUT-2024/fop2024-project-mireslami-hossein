@@ -8,6 +8,7 @@
 // MAX_SIZES
 #define MAX_USERNAME 15
 #define MAX_PASSWORD 20
+#define MAX_EMAIL 25
 
 // New COLORS
 #define COLOR_PURPLE 10

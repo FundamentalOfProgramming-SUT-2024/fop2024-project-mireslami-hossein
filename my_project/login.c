@@ -3,8 +3,15 @@
 #include <string.h>
 #include <ncurses.h>
 #include "cjson/cJSON.h"
+#include <regex.h>
 #include "basic_loads.h"
 
+typedef struct {
+    char* username;
+    char* password;
+    char* email;
+    char* checker_w;
+} User;
 
 char login_messages[3][50] = {
     "Welcome!", "Choose a way to continue:", "(Q to exit)"
@@ -148,6 +155,23 @@ bool password_validated(WINDOW* w, int height, int width, int y, int x, char* pa
     return TRUE;
 }
 
+bool email_validated(WINDOW* w, int height, int width, int y, int x, char* email){
+    regex_t regex;
+    int ret;
+
+    ret = regcomp(&regex, "^[a-zA-Z0-9._%%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]+$", REG_EXTENDED);
+    
+    ret = regexec(&regex, email, 0, NULL, 0);
+    regfree(&regex);
+
+    if (!ret) {
+        return TRUE;
+    } else if (ret == REG_NOMATCH) {
+        print_error_message(w, height, width, y, x, "Enter a correct Email! like xxx@yyy.ccc !");
+        return FALSE;
+    }
+}
+
 // Signup Form Handeling
 void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
     while(1){
@@ -206,9 +230,6 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
             print_error_message(sign_form, height, width, y, x+index, "password must be maximum 20 characters!");
             continue;
         }
-
-        mvprintw(0,0,"Key code: %d\n", pass_ch);
-        refresh();
         password[index] = pass_ch;
         mvwaddch(sign_form, y, x+index, '*');
         wrefresh(sign_form);
@@ -216,10 +237,49 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
     }
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     password[index] = '\0';
-    mvprintw(0,0, "password is: %s", password);
-    refresh();
+    wrefresh(sign_form);
 }
 
+void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* email){
+    int email_ch;
+    int index = 0;
+
+    wmove(sign_form, y, x);
+    curs_set(TRUE);
+    keypad(sign_form, TRUE);
+    echo();
+
+    while(1){
+        email_ch =  wgetch(sign_form);
+
+        if(email_ch == '\n'){
+            if(email_validated(sign_form, height, width, y, x+index, email))
+                break;
+            else
+                continue;
+        } else if(email_ch == KEY_BACKSPACE || email_ch == 127) {
+            if (index > 0) {
+                index--;
+                email[index] = '\0';
+                mvwaddch(sign_form, y, x+index, ' ');
+                wmove(sign_form, y, x+index);
+            }
+            continue;
+        } else if(email_ch == KEY_LEFT || email_ch == KEY_RIGHT) {
+            continue;
+        }
+        if(index >= MAX_EMAIL){
+            print_error_message(sign_form, height, width, y, x+index, "Email must be maximum 25 characters!");
+            continue;
+        }
+
+        email[index] = email_ch;
+        index++;
+    }
+    email[index] = '\0';
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
+    wrefresh(sign_form);
+}
 
 void signup_user(){
     int width = 50, height = 26;
@@ -240,11 +300,20 @@ void signup_user(){
 
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
-    char *username = (char *)malloc((MAX_USERNAME+5) * sizeof(char));
-    get_username(sign_form, height, width, y_start, x_start, username);
+    User user;
+    
 
-    char* password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
-    get_password(sign_form, height, width, y_start + 2, x_start, password);
+    user.username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+    get_username(sign_form, height, width, y_start, x_start, user.username);
+
+    user.password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
+    get_password(sign_form, height, width, y_start + 2, x_start, user.password);
+
+    user.email = (char *)malloc((MAX_EMAIL) * sizeof(char));
+    get_email(sign_form, height, width, y_start + 4, x_start, user.email);
+
+    // user.checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+    // get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
 
     refresh();
     wrefresh(sign_form);
