@@ -39,6 +39,14 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
     wrefresh(w);
 }
 
+// string functions
+bool is_upper(char c){
+    return (c >= 'A' && c <= 'Z');
+} 
+bool is_lower(char c){
+    return (c >= 'a' && c <= 'z');
+}
+
 void game_initalize(){
     start_color();
     add_color_rgb(COLOR_PURPLE, 71, 50, 122);
