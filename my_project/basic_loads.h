@@ -40,6 +40,10 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
     wrefresh(w);
 }
 
+int rand_in(int a, int b){
+    return (rand() % (b-a) + a);
+}
+
 // string functions
 bool is_upper(char c){
     return (c >= 'A' && c <= 'Z');
