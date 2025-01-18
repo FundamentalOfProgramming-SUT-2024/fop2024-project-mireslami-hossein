@@ -103,7 +103,7 @@ void print_error_message(WINDOW* w, int height, int width,  int reset_y, int res
     mvwprintw(w, height - 2 , width/2 - strlen(ms)/2, "%s", ms);
     wattroff(w, COLOR_PAIR(MESSAGE_COLOR)| A_BOLD);
     wrefresh(w);
-    move(reset_y, reset_x);
+    wmove(w,reset_y, reset_x);
 }
 
 bool does_user_exist(char* name){
@@ -142,35 +142,87 @@ void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* 
     clear_part(sign_form, height-2, 1, height-2, width - 2);
 }
 
-bool password_validated(char* password){
+bool password_validated(WINDOW* w, int height, int width, int y, int x, char* password){
     bool min_len = FALSE, int_included = FALSE,
          lower_included = FALSE, upper_included = FALSE;
     if(strlen(password) < 7){
-
+        print_error_message(w, height, width, y, x, "Password must be at least 7 characters!");
+        return FALSE;
+    } else{
+        min_len = TRUE;
     }
+    for(int i = 0; i < strlen(password); i++){
+        if(is_upper(password[i])) upper_included = TRUE;
+        if(is_lower(password[i])) lower_included = TRUE;
+        if(is_digit(password[i])) int_included = TRUE;
+    }
+
+    if(!upper_included){
+        print_error_message(w, height, width, y, x, "Password must have at least 1 upper character!");
+        return FALSE;
+    }
+    if(!lower_included){
+        print_error_message(w, height, width, y, x, "Password must have at least 1 lower character!");
+        return FALSE;
+    }
+    if(!int_included){
+        print_error_message(w, height, width, y, x, "Password must have at least 1 digit character!");
+        return FALSE;
+    }
+    return TRUE;
 }
 
 void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
     int pass_ch;
     int index = 0;
     
+    clear_part(sign_form, y, x, y, width - 2);
+    wmove(sign_form ,y, x);
+    curs_set(TRUE);
+    keypad(sign_form, TRUE);
+    noecho();
+
     while(1){
-        clear_part(sign_form, y, x, y, width - 2);
-        wmove(sign_form, y, x+index);
-        curs_set(TRUE);
-        echo();
         pass_ch =  wgetch(sign_form);
+
         if(pass_ch == '\n'){
-            if(password_validated(password)){
+            if(password_validated(sign_form, height, width, y, x+index, password)){
                 break;
+            } else{
+                continue;
             }
+        } else if(pass_ch == KEY_BACKSPACE || pass_ch == 127) {
+            if (index > 0) {
+                index--;
+                password[index] = '\0';
+                mvwaddch(sign_form, y, x+index, ' ');
+                wmove(sign_form, y, x+index);
+            }
+            continue;
+        } else if(pass_ch == KEY_LEFT || pass_ch == KEY_RIGHT) {
+            continue;
         }
+        if(index >= MAX_PASSWORD){
+            print_error_message(sign_form, height, width, y, x+index, "password must be maximum 20 characters!");
+            continue;
+        }
+
+        mvprintw(0,0,"Key code: %d\n", pass_ch);
+        refresh();
+        password[index] = pass_ch;
+        mvwaddch(sign_form, y, x+index, '*');
+        wrefresh(sign_form);
+        index++;
     }
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
+    password[index] = '\0';
+    mvprintw(0,0, "password is: %s", password);
+    refresh();
 }
 
 
 void signup_user(){
-    int width = 46, height = 26;
+    int width = 50, height = 26;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
     WINDOW* sign_form = newwin(height, width, y, x);
