@@ -281,6 +281,44 @@ void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* ema
     wrefresh(sign_form);
 }
 
+bool get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
+    int check_ch;
+    int index = 0;
+
+    wmove(sign_form, y, x);
+    curs_set(TRUE);
+    keypad(sign_form, TRUE);
+    echo();
+
+    while(1){
+        check_ch = wgetch(sign_form);
+        if(check_ch == '\n'){
+            break;
+        } else if(check_ch == KEY_BACKSPACE || check_ch == 127) {
+            if (index > 0) {
+                index--;
+                checker_w[index] = '\0';
+                mvwaddch(sign_form, y, x+index, ' ');
+                wmove(sign_form, y, x+index);
+            }
+            continue;
+        } else if(check_ch == KEY_LEFT || check_ch == KEY_RIGHT) {
+            continue;
+        }
+        if(index >= MAX_USERNAME){
+            print_error_message(sign_form, height, width, y, x+index, "Checker word must be maximum 20 characters!");
+            continue;
+        }
+
+        checker_w[index] = check_ch;
+        index++;
+
+    }
+    checker_w[index] = '\0';
+    curs_set(FALSE);
+    noecho();
+}
+
 void signup_user(){
     int width = 50, height = 26;
     int y = LINES/2 - height/2;
@@ -301,7 +339,6 @@ void signup_user(){
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
     User user;
-    
 
     user.username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
     get_username(sign_form, height, width, y_start, x_start, user.username);
@@ -312,16 +349,17 @@ void signup_user(){
     user.email = (char *)malloc((MAX_EMAIL) * sizeof(char));
     get_email(sign_form, height, width, y_start + 4, x_start, user.email);
 
-    // user.checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
-    // get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
+    user.checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+    get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
 
+
+    mvprintw(0,0,"U: %s, P:%s, E:%s, CH:%s;", user.username, user.password, user.email, user.checker_w);
     refresh();
     wrefresh(sign_form);
 
 
     int c = getch();
 }
-
 
 
 void open_form(int selected){
