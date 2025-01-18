@@ -46,6 +46,9 @@ bool is_upper(char c){
 bool is_lower(char c){
     return (c >= 'a' && c <= 'z');
 }
+bool is_int(char c){
+    return (c >= '0' && c <= '9');
+}
 
 void game_initalize(){
     start_color();
