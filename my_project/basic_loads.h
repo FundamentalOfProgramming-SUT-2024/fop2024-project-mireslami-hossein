@@ -44,6 +44,36 @@ int rand_in(int a, int b){
     return (rand() % (b-a) + a);
 }
 
+void rand_ints(int* arr, int size, int a, int b, int ascending){
+    for(int i = 0; i < size; i++){
+        int x = rand_in(a, b);
+        bool used = FALSE;
+        for(int j = 0; j < i; j ++){
+            if(arr[j] == x){
+                used = TRUE;
+                break;
+            }
+        }
+
+        if(!used){
+            arr[i] = x;
+        } else{
+            i--;
+        }
+    }
+    if(ascending){
+        for(int i = 0; i < size; i++){
+            for(int j = 0; j < size; j++){
+                if(arr[i] < arr[j]){
+                    int t = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = t;
+                }
+            }
+        }
+    }
+}
+
 // string functions
 bool is_upper(char c){
     return (c >= 'A' && c <= 'Z');
