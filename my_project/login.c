@@ -4,6 +4,8 @@
 #include <ncurses.h>
 #include "cjson/cJSON.h"
 #include <regex.h>
+#include <time.h>
+
 #include "basic_loads.h"
 
 typedef struct {
@@ -23,6 +25,10 @@ char login_items[2][50] = {
 
 char signup_form_labels[4][50] = {
     "Username*: ", "Password*: ", "Email*: ", "Checker Word: "
+};
+
+char signup_form_buttons[2][50] = {
+    "Generate Random Password", "submit"
 };
 
 char login_form_labels[4][50] = {
@@ -56,7 +62,7 @@ void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type,
     wattroff(w, COLOR_PAIR(color_id));
 }
 
-void print_buttons(WINDOW* w, char btns[][50], int size,int selected, int y, int x){
+void print_buttons(WINDOW* w, char btns[][50], int size, int selected, int y, int x){
     wattron(w, A_BOLD);
     
     for(int i = 0; i < size; i ++){
@@ -78,7 +84,7 @@ void print_buttons(WINDOW* w, char btns[][50], int size,int selected, int y, int
 }
 
 
-void handle_selected_btn(int* selected, int size, int* flag){
+int handle_selected_btn(int* selected, int size, int* flag){
     int ch = getch();
 
     switch (ch)
@@ -92,6 +98,7 @@ void handle_selected_btn(int* selected, int size, int* flag){
         if(*selected >= size) *selected = 0;
         break;
     
+    // on press Enter
     case 10: case 13:
         *flag = 1;
         break;
@@ -201,6 +208,8 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
     int index = 0;
     
     clear_part(sign_form, y, x, y, width - 2);
+    print_error_message(sign_form, height, width, y, x, "if you want to generate random pass press ENTER!");
+
     wmove(sign_form ,y, x);
     curs_set(TRUE);
     keypad(sign_form, TRUE);
@@ -210,6 +219,9 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
         pass_ch =  wgetch(sign_form);
 
         if(pass_ch == '\n'){
+            if(index == 0){
+                break;
+            }
             if(password_validated(sign_form, height, width, y, x+index, password)){
                 break;
             } else{
@@ -281,7 +293,7 @@ void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* ema
     wrefresh(sign_form);
 }
 
-bool get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
+void get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
     int check_ch;
     int index = 0;
 
@@ -314,9 +326,62 @@ bool get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, ch
         index++;
 
     }
+
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
+    wrefresh(sign_form);
+
     checker_w[index] = '\0';
     curs_set(FALSE);
     noecho();
+}
+
+void generate_random_pass(WINDOW* sign_form, int height, int width, char* pass){
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
+    char* ms = "Do you want to generate a random pass? (y/n)";
+    print_error_message(sign_form, height, width, height - 2, width/2 + strlen(ms)/2 + 1, ms);
+    
+    curs_set(TRUE);
+    int c = wgetch(sign_form);
+    curs_set(FALSE);
+
+    if(c == 'y'){
+        int len = rand_in(7, MAX_PASSWORD);
+        for(int i = 0; i < len; i++){
+            pass[i] = ' ';
+        }
+        pass[len] = '\0';
+
+        int num_upper = rand_in(2, len/4);
+        int num_dig = rand_in(2, len/4);
+
+        int upper_indexs[num_upper], dig_indexs[num_dig];
+        rand_ints(upper_indexs, num_upper, 0, len, 1);
+        rand_ints(dig_indexs, num_dig, 0, len, 1);
+        
+        for(int i = 0; i<num_upper; i++){
+            int l = rand_in('A', 'Z' + 1);
+            printw("%d:%c ", upper_indexs[i], l);
+
+            pass[upper_indexs[i]] = l;
+        }
+        for(int i = 0; i<num_dig; i++){
+            int l = rand_in('0', '9' + 1);
+            printw("%d:%c ", dig_indexs[i], l);
+
+            pass[dig_indexs[i]] = l;
+        }
+        
+        for(int i = 0; i < len; i++){
+            if(pass[i] == ' '){
+                pass[i] = rand_in('a', 'z' + 1);
+            }
+        }
+        mvprintw(1,0, "random pass: %s \n length: %d", pass, len);
+        refresh();
+    }
+
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
+    wrefresh(sign_form);
 }
 
 void signup_user(){
@@ -335,7 +400,10 @@ void signup_user(){
     
     int y_start = 6;
     int x_start = 18;
-
+    
+    int selected = -1;
+    int pressed = 0;
+    print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
     User user;
@@ -351,12 +419,25 @@ void signup_user(){
 
     user.checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
     get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
-
-
-    mvprintw(0,0,"U: %s, P:%s, E:%s, CH:%s;", user.username, user.password, user.email, user.checker_w);
-    refresh();
-    wrefresh(sign_form);
-
+    
+    selected = 0;
+    while(pressed == 0){
+        print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
+        handle_selected_btn(&selected, 2, &pressed);
+        
+        if(pressed == 1){
+            if(selected == 0)
+                generate_random_pass(sign_form, height, width, user.password);
+            else
+                break;
+            pressed = 0;
+        } else if(pressed == -1){
+            endwin();
+            exit(0);
+        }
+        refresh();
+        wrefresh(sign_form);
+    }
 
     int c = getch();
 }

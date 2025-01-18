@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<ncurses.h>
+#include <time.h>
 
 // MAX_SIZES
 #define MAX_USERNAME 15
@@ -41,6 +42,7 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
 }
 
 int rand_in(int a, int b){
+    if(a == b) return a;
     return (rand() % (b-a) + a);
 }
 
@@ -100,6 +102,8 @@ void game_initalize(){
     init_pair(HEADER_COLOR, CUSTOM_CYAN, COLOR_BLACK);
     init_pair(TEXT_COLOR, COLOR_WHITE, COLOR_BLACK);
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
+
+    srand(time(NULL));
 }
 
 #endif
