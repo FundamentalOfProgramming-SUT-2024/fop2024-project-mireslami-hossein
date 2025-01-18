@@ -97,12 +97,13 @@ void handle_selected_btn(int* selected, int size, int* flag){
 
 
 // Validation
-void print_error_message(WINDOW* w, int height, int width, char* ms){
+void print_error_message(WINDOW* w, int height, int width,  int reset_y, int reset_x, char* ms){
     clear_part(w, height-2, 1, height-2, width - 2);
     wattron(w, COLOR_PAIR(MESSAGE_COLOR) | A_BOLD);
     mvwprintw(w, height - 2 , width/2 - strlen(ms)/2, "%s", ms);
     wattroff(w, COLOR_PAIR(MESSAGE_COLOR)| A_BOLD);
     wrefresh(w);
+    move(reset_y, reset_x);
 }
 
 bool does_user_exist(char* name){
@@ -117,8 +118,8 @@ bool does_user_exist(char* name){
     return FALSE;
 }
 
+// Signup Form Handeling
 void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
-    int c = 0;
     while(1){
         clear_part(sign_form, y, x, y, width - 2);
         wmove(sign_form, y, x);
@@ -129,18 +130,44 @@ void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* 
         wgetnstr(sign_form , username, MAX_USERNAME);
 
         if(does_user_exist(username)){
-            print_error_message(sign_form, height, width, "This Username has already taken!");
-            wmove(sign_form, y, x);
-
-        } else{
-            char text[50];
-            sprintf(text, "Username %s added successfully!", username);
-            print_error_message(sign_form, height, width, text);
+            print_error_message(sign_form, height, width, y, x, "This Username has already taken!");
+        } else if(strlen(username) == 0){
+            print_error_message(sign_form, height, width, y, x, "Username box must be completed!");
+        }
+         else{
             curs_set(FALSE);
             break;
         }
     }
+    clear_part(sign_form, height-2, 1, height-2, width - 2);
 }
+
+bool password_validated(char* password){
+    bool min_len = FALSE, int_included = FALSE,
+         lower_included = FALSE, upper_included = FALSE;
+    if(strlen(password) < 7){
+
+    }
+}
+
+void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
+    int pass_ch;
+    int index = 0;
+    
+    while(1){
+        clear_part(sign_form, y, x, y, width - 2);
+        wmove(sign_form, y, x+index);
+        curs_set(TRUE);
+        echo();
+        pass_ch =  wgetch(sign_form);
+        if(pass_ch == '\n'){
+            if(password_validated(password)){
+                break;
+            }
+        }
+    }
+}
+
 
 void signup_user(){
     int width = 46, height = 26;
@@ -156,11 +183,17 @@ void signup_user(){
     mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
     wattroff(sign_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
     
-    print_messages(sign_form, signup_form_labels, 4, 6, 18, 'r', LABEL_COLOR);
+    int y_start = 6;
+    int x_start = 18;
+
+    print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
     char *username = (char *)malloc((MAX_USERNAME+5) * sizeof(char));
-    get_username(sign_form, height, width, 6, 18, username);
-    
+    get_username(sign_form, height, width, y_start, x_start, username);
+
+    char* password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
+    get_password(sign_form, height, width, y_start + 2, x_start, password);
+
     refresh();
     wrefresh(sign_form);
 
