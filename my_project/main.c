@@ -33,7 +33,7 @@ int main(){
 
     game_initalize();
     load_first_page();
-
+    
     refresh();
     
     endwin();

@@ -114,21 +114,6 @@ int write_file(char* path, char* data){
     return 0;
 }
 
-void start_files(){
-    FILE* users_data = fopen("data/users.json", "w");
-
-    cJSON *root = cJSON_CreateObject();
-    cJSON *users = cJSON_CreateArray();
-    cJSON_AddItemToObject(root, "users", users);
-
-    char* data = cJSON_Print(root);
-    fprintf(users_data, "%s", data);
-
-    fclose(users_data);
-
-    
-}
-
 void game_initalize(){
     start_color();
     add_color_rgb(COLOR_PURPLE, 71, 50, 122);
@@ -146,8 +131,6 @@ void game_initalize(){
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
 
     srand(time(NULL));
-
-    start_files();
 }
 
 #endif

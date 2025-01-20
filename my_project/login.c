@@ -410,7 +410,31 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
 }
 
 void save_user_data(User user){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        root = cJSON_CreateObject();
+        cJSON* users = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "users", users);
+    }
     
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    if(!users){
+        users = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "users", users);
+    }
+
+    cJSON *user_data = cJSON_CreateObject();
+    cJSON_AddItemToObject(user_data, "username", cJSON_CreateString(user.username));
+    cJSON_AddItemToObject(user_data, "password", cJSON_CreateString(user.password));
+    cJSON_AddItemToObject(user_data, "email", cJSON_CreateString(user.email));
+    cJSON_AddItemToObject(user_data, "checker_word", cJSON_CreateString(user.checker_w));
+
+    cJSON_AddItemToArray(users, user_data);
+
+    char* file_data = cJSON_Print(root);
+    write_file("data/users.json", file_data);
 }
 
 void signup_user(){
