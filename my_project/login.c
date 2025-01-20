@@ -122,6 +122,7 @@ void print_error_message(WINDOW* w, int height, int width,  int reset_y, int res
 
 int count_users();
 void read_usernames(char** usernames, int number_of_users);
+void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass);
 
 bool does_user_exist(char* name){
     bool result = FALSE;
@@ -228,10 +229,15 @@ void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* 
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(user_ch < 33 || user_ch > 126) {
+        } else if(user_ch < 32 || user_ch > 126) {
             continue;
         }
-
+        if(index >= MAX_USERNAME){
+            char ms[50];
+            sprintf(ms, "username must be maximum %d characters!", MAX_USERNAME);
+            print_error_message(sign_form, height, width, y, x+index, ms);
+            continue;
+        }
         username[index] = user_ch;
         mvwaddch(sign_form, y, x+index, user_ch);
         wrefresh(sign_form);
@@ -257,6 +263,7 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
 
         if(pass_ch == '\n'){
             if(index == 0){
+                generate_random_pass(sign_form, height, width, y, x, password);
                 break;
             }
             if(password_validated(sign_form, height, width, y, x+index, password)){
@@ -272,12 +279,14 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(pass_ch < 33 || pass_ch > 126) {
+        } else if(pass_ch < 32 || pass_ch > 126) {
             continue;
         }
 
         if(index >= MAX_PASSWORD){
-            print_error_message(sign_form, height, width, y, x+index, "password must be maximum 20 characters!");
+            char ms[50];
+            sprintf(ms, "password must be maximum %d characters!", MAX_PASSWORD);
+            print_error_message(sign_form, height, width, y, x+index, ms);
             continue;
         }
         password[index] = pass_ch;
@@ -297,7 +306,7 @@ void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* ema
     wmove(sign_form, y, x);
     curs_set(TRUE);
     keypad(sign_form, TRUE);
-    echo();
+    noecho();
 
     while(1){
         email_ch =  wgetch(sign_form);
@@ -315,17 +324,19 @@ void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* ema
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(email_ch == KEY_LEFT || email_ch == KEY_RIGHT) {
+        } else if(email_ch < 32 || email_ch > 126) {
             continue;
         }
         if(index >= MAX_EMAIL){
-            print_error_message(sign_form, height, width, y, x+index, "Email must be maximum 25 characters!");
-            continue;
+            char ms[50];
+            sprintf(ms, "Email must be maximum %d characters!", MAX_EMAIL);
+            print_error_message(sign_form, height, width, y, x+index, ms);            continue;
         }
-
+        mvwaddch(sign_form, y, x+index, email_ch);
         email[index] = email_ch;
         index++;
     }
+
     email[index] = '\0';
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     wrefresh(sign_form);
@@ -338,7 +349,7 @@ void get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, ch
     wmove(sign_form, y, x);
     curs_set(TRUE);
     keypad(sign_form, TRUE);
-    echo();
+    noecho();
 
     while(1){
         check_ch = wgetch(sign_form);
@@ -352,21 +363,22 @@ void get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, ch
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(check_ch == KEY_LEFT || check_ch == KEY_RIGHT) {
+        } else if(check_ch < 32 || check_ch > 126) {
             continue;
         }
         if(index >= MAX_USERNAME){
-            print_error_message(sign_form, height, width, y, x+index, "Checker word must be maximum 20 characters!");
+            char ms[50];
+            sprintf(ms, "checker word must be maximum %d characters!", MAX_USERNAME);
+            print_error_message(sign_form, height, width, y, x+index, ms);
             continue;
         }
 
         checker_w[index] = check_ch;
+        mvwaddch(sign_form, y, x+index, check_ch);
         index++;
-
     }
 
     clear_part(sign_form, height-2, 1, height-2, width - 2);
-
     checker_w[index] = '\0';
     curs_set(FALSE);
     noecho();

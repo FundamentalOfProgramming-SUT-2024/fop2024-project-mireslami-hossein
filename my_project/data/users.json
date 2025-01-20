@@ -1,9 +1,29 @@
 {
-	"users_number":	1,
+	"users_number":	5,
 	"users":	[{
 			"username":	"m",
 			"password":	"nz5tbaktOQsM7nilv",
 			"email":	"m@g.c",
+			"checker_word":	"m"
+		}, {
+			"username":	"mir",
+			"password":	"AA5wvasw3fv",
+			"email":	"mir@g.c",
+			"checker_word":	"ali"
+		}, {
+			"username":	"mire",
+			"password":	"5qeyvakd1kHr",
+			"email":	"mir23@g.c",
+			"checker_word":	"mir"
+		}, {
+			"username":	"mit",
+			"password":	"tmw3yteigtYrrh9",
+			"email":	"a@g.c",
+			"checker_word":	"mir"
+		}, {
+			"username":	"aaaaa",
+			"password":	"y59qAqpzV",
+			"email":	"mi@g.c",
 			"checker_word":	"m"
 		}]
 }
