@@ -27,6 +27,7 @@
 #define TEXT_COLOR 5
 #define LABEL_COLOR 5
 
+// graphics
 void add_color_rgb(int id, int r, int g, int b){
     start_color();
     init_color(id, r*1000/255, g*1000/255, b*1000/255);
@@ -41,6 +42,7 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
     wrefresh(w);
 }
 
+// randoms
 int rand_in(int a, int b){
     if(a == b) return a;
     return (rand() % (b-a) + a);
@@ -85,6 +87,30 @@ bool is_lower(char c){
 }
 bool is_digit(char c){
     return (c >= '0' && c <= '9');
+}
+
+// Files
+char* read_file(char* path){
+    FILE* fptr = fopen(path, "r");
+
+    fseek(fptr, 0, SEEK_END);
+    long file_size = ftell(fptr);
+    rewind(fptr);
+
+    char* data = (char *)malloc(file_size + 1);
+    fread(data, 1, file_size, fptr);
+
+    fclose(fptr);
+
+    return data;
+}
+
+int write_file(char* path, char* data){
+    FILE* fptr = fopen(path, "w");
+    if(!fptr) return -1;
+    fprintf(fptr, "%s", data);
+    fclose(fptr);
+    return 0;
 }
 
 void game_initalize(){
