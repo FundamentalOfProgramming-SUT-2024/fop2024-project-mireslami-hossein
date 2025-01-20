@@ -409,6 +409,10 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
     wrefresh(sign_form);
 }
 
+void save_user_data(User user){
+    
+}
+
 void signup_user(){
     int width = 50, height = 26;
     int y = LINES/2 - height/2;
@@ -454,7 +458,7 @@ void signup_user(){
             if(selected == 0)
                 generate_random_pass(sign_form, height, width, y_start+2, x_start, user.password);
             else{
-                
+                save_user_data(user);
                 break;
             }
             pressed = 0;
