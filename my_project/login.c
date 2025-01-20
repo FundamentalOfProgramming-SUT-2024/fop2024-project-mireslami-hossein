@@ -181,24 +181,45 @@ bool email_validated(WINDOW* w, int height, int width, int y, int x, char* email
 
 // Signup Form Handeling
 void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
+    int user_ch;
+    int index = 0;
+
+    clear_part(sign_form, y, x, y, width - 2);
+    wmove(sign_form, y, x);
+    curs_set(TRUE);
+    noecho();
+
     while(1){
-        clear_part(sign_form, y, x, y, width - 2);
-        wmove(sign_form, y, x);
-        curs_set(TRUE);
-        echo();
+        user_ch = wgetch(sign_form);
+
+        if(user_ch == '\n'){
+            username[index] = '\0';
+
+            if(does_user_exist(username)){
+                print_error_message(sign_form, height, width, y, x+index, "This Username has already taken!");
+            } else if(index == 0){
+                print_error_message(sign_form, height, width, y, x+index, "Username box must be completed!");
+            } else{
+                curs_set(FALSE);
+                break;
+            }
+            continue;
+        } else if(user_ch == KEY_BACKSPACE || user_ch == 127) {
+            if (index > 0) {
+                index--;
+                username[index] = '\0';
+                mvwaddch(sign_form, y, x+index, ' ');
+                wmove(sign_form, y, x+index);
+            }
+            continue;
+        } else if(user_ch < 33 || user_ch > 126) {
+            continue;
+        }
+
+        username[index] = user_ch;
+        mvwaddch(sign_form, y, x+index, user_ch);
         wrefresh(sign_form);
-
-        wgetnstr(sign_form , username, MAX_USERNAME);
-
-        if(does_user_exist(username)){
-            print_error_message(sign_form, height, width, y, x, "This Username has already taken!");
-        } else if(strlen(username) == 0){
-            print_error_message(sign_form, height, width, y, x, "Username box must be completed!");
-        }
-         else{
-            curs_set(FALSE);
-            break;
-        }
+        index++;
     }
     clear_part(sign_form, height-2, 1, height-2, width - 2);
 }
@@ -216,7 +237,7 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
     noecho();
 
     while(1){
-        pass_ch =  wgetch(sign_form);
+        pass_ch = wgetch(sign_form);
 
         if(pass_ch == '\n'){
             if(index == 0){
@@ -235,9 +256,10 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(pass_ch == KEY_LEFT || pass_ch == KEY_RIGHT) {
+        } else if(pass_ch < 33 || pass_ch > 126) {
             continue;
         }
+
         if(index >= MAX_PASSWORD){
             print_error_message(sign_form, height, width, y, x+index, "password must be maximum 20 characters!");
             continue;
@@ -328,14 +350,13 @@ void get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, ch
     }
 
     clear_part(sign_form, height-2, 1, height-2, width - 2);
-    wrefresh(sign_form);
 
     checker_w[index] = '\0';
     curs_set(FALSE);
     noecho();
 }
 
-void generate_random_pass(WINDOW* sign_form, int height, int width, char* pass){
+void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass){
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     char* ms = "Do you want to generate a random pass? (y/n)";
     print_error_message(sign_form, height, width, height - 2, width/2 + strlen(ms)/2 + 1, ms);
@@ -360,14 +381,10 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, char* pass){
         
         for(int i = 0; i<num_upper; i++){
             int l = rand_in('A', 'Z' + 1);
-            printw("%d:%c ", upper_indexs[i], l);
-
             pass[upper_indexs[i]] = l;
         }
         for(int i = 0; i<num_dig; i++){
             int l = rand_in('0', '9' + 1);
-            printw("%d:%c ", dig_indexs[i], l);
-
             pass[dig_indexs[i]] = l;
         }
         
@@ -376,7 +393,15 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, char* pass){
                 pass[i] = rand_in('a', 'z' + 1);
             }
         }
-        mvprintw(1,0, "random pass: %s \n length: %d", pass, len);
+        char ms[50];
+        sprintf(ms, "%s %s", "Now your password is: ", pass);
+        print_error_message(sign_form, height, width, height - 2, width/2 + strlen(ms)/2 + 1, ms);
+        clear_part(sign_form, y_pass, x_pass, y_pass, width - 2);
+        for(int i = 0; i < len; i++){
+            mvwaddch(sign_form, y_pass, x_pass+i, '*');
+        }
+        int c = getchar();
+        clear_part(sign_form, height-2, 1, height-2, width - 2);
         refresh();
     }
 
@@ -427,9 +452,11 @@ void signup_user(){
         
         if(pressed == 1){
             if(selected == 0)
-                generate_random_pass(sign_form, height, width, user.password);
-            else
+                generate_random_pass(sign_form, height, width, y_start+2, x_start, user.password);
+            else{
+                
                 break;
+            }
             pressed = 0;
         } else if(pressed == -1){
             endwin();
