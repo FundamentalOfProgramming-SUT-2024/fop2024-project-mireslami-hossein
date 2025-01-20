@@ -84,7 +84,7 @@ void print_buttons(WINDOW* w, char btns[][50], int size, int selected, int y, in
 }
 
 
-int handle_selected_btn(int* selected, int size, int* flag){
+void handle_selected_btn(int* selected, int size, int* flag){
     int ch = getch();
 
     switch (ch)
@@ -120,16 +120,32 @@ void print_error_message(WINDOW* w, int height, int width,  int reset_y, int res
     wmove(w,reset_y, reset_x);
 }
 
+int count_users();
+void read_usernames(char** usernames, int number_of_users);
+
 bool does_user_exist(char* name){
-    // Most be completed
-    char usernames[MAX_USERNAME][50] = {"ali", "hossein"};
-    int number_of_users = 2;
+    bool result = FALSE;
+    int number_of_users = count_users();
+    if(number_of_users == 0) return result;
+    char** usernames = (char**)malloc(number_of_users * sizeof(char*));
+    for(int i = 0; i < number_of_users; ++i){
+        usernames[i] = (char*)malloc(MAX_USERNAME* sizeof(char));
+    }
+    read_usernames(usernames, number_of_users);
+
     for(int i = 0; i < number_of_users; i++){
         if(strcmp(name, usernames[i]) == 0){
-            return TRUE;
+            result = TRUE;
+            break;
         }
     }
-    return FALSE;
+
+    for(int i = 0; i < number_of_users; i++){
+        free(usernames[i]);
+    }
+    free(usernames);
+
+    return result;
 }
 
 bool password_validated(WINDOW* w, int height, int width, int y, int x, char* password){
@@ -409,22 +425,54 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
     wrefresh(sign_form);
 }
 
+// Data
+int count_users(){
+    char* users_data = read_file("data/users.json");
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        return 0;
+    }
+
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
+    return user_number->valueint;
+}
+
+void read_usernames(char** usernames, int number_of_users){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        printf("EXIT");
+        return;
+    }
+
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    
+    for(int i = 0; i < number_of_users; ++i){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+        strcpy(usernames[i], username->valuestring);
+    }
+    cJSON_Delete(root);
+    free(users_data);
+}
+
 void save_user_data(User user){
     char* users_data = read_file("data/users.json");
 
     cJSON* root = cJSON_Parse(users_data);
     if(!root){
         root = cJSON_CreateObject();
+        cJSON_AddNumberToObject(root, "users_number", 0);
         cJSON* users = cJSON_CreateArray();
         cJSON_AddItemToObject(root, "users", users);
     }
     
     cJSON* users = cJSON_GetObjectItem(root, "users");
-    if(!users){
-        users = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "users", users);
-    }
+    
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
 
+    cJSON_SetIntValue(user_number, user_number->valueint+1);
     cJSON *user_data = cJSON_CreateObject();
     cJSON_AddItemToObject(user_data, "username", cJSON_CreateString(user.username));
     cJSON_AddItemToObject(user_data, "password", cJSON_CreateString(user.password));
@@ -436,6 +484,7 @@ void save_user_data(User user){
     char* file_data = cJSON_Print(root);
     write_file("data/users.json", file_data);
 }
+
 
 void signup_user(){
     int width = 50, height = 26;
