@@ -28,6 +28,31 @@
 #define TEXT_COLOR 5
 #define LABEL_COLOR 5
 
+// Structs
+typedef struct{
+
+} Game;
+
+typedef struct{
+
+} Game_time;
+
+typedef struct {
+    char* username;
+    char* password;
+    char* email;
+    char* checker_w;
+
+    int points;
+    int golds;
+    int grade;
+    
+    Game_time exprience;
+    Game* last_game;
+
+    int ended_games;
+} User;
+
 // graphics
 void add_color_rgb(int id, int r, int g, int b){
     start_color();
@@ -112,6 +137,21 @@ int write_file(char* path, char* data){
     fprintf(fptr, "%s", data);
     fclose(fptr);
     return 0;
+}
+
+// User
+void reset_user_data(User* user){
+    user->username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+    user->password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
+    user->email = (char *)malloc((MAX_EMAIL) * sizeof(char));
+    user->checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+
+    user->points = 0;
+    user->grade = 0;
+    user->golds = 0;
+    user->ended_games = 0;
+
+    user->last_game = (Game *)malloc(sizeof(Game));
 }
 
 void game_initalize(){

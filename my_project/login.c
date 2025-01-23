@@ -8,12 +8,6 @@
 
 #include "basic_loads.h"
 
-typedef struct {
-    char* username;
-    char* password;
-    char* email;
-    char* checker_w;
-} User;
 
 char login_messages[3][50] = {
     "Welcome!", "Choose a way to continue:", "(Q to exit)"
@@ -31,9 +25,14 @@ char signup_form_buttons[2][50] = {
     "Generate Random Password", "submit"
 };
 
-char login_form_labels[4][50] = {
+char login_form_labels[2][50] = {
     "Username: ", "Password: "
 };
+
+char login_form_buttons[3][50] = {
+    "Login", "Login as Guest", "I Forgot My Password"
+};
+
 
 void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
     wattron(w, COLOR_PAIR(color_id));
@@ -497,6 +496,31 @@ void save_user_data(User user){
     write_file("data/users.json", file_data);
 }
 
+void login_user(){
+    int width = 40, height = 19;
+    int y = LINES/2 - height/2;
+    int x = COLS/2 - width/2;
+    WINDOW* sign_form = newwin(height, width, y, x);
+    box(sign_form, 0, 0);
+    refresh();
+    char title[20] = "Login Up";
+    start_color();
+    wattron(sign_form, COLOR_PAIR(HEADER_COLOR) | A_BOLD);
+    mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
+    wattroff(sign_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
+    int y_start = 6;
+    int x_start = 15;
+    
+    int selected = -1;
+    int pressed = 0;
+
+    print_messages(sign_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
+    print_buttons(sign_form, login_form_buttons, 3, selected, y_start + 8, width/2);
+
+
+
+    getchar();
+}
 
 void signup_user(){
     int width = 50, height = 26;
@@ -522,16 +546,14 @@ void signup_user(){
 
     User user;
 
-    user.username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
+    reset_user_data(&user);
+
     get_username(sign_form, height, width, y_start, x_start, user.username);
 
-    user.password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
     get_password(sign_form, height, width, y_start + 2, x_start, user.password);
 
-    user.email = (char *)malloc((MAX_EMAIL) * sizeof(char));
     get_email(sign_form, height, width, y_start + 4, x_start, user.email);
 
-    user.checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
     get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
     
     selected = 0;
@@ -565,7 +587,7 @@ void open_form(int selected){
     if(selected == 0){
         signup_user();
     } else if(selected == 1){
-        // login_user();
+        login_user();
     }
     refresh();
 }

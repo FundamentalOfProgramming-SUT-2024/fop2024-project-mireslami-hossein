@@ -1,5 +1,5 @@
 {
-	"users_number":	5,
+	"users_number":	6,
 	"users":	[{
 			"username":	"m",
 			"password":	"nz5tbaktOQsM7nilv",
@@ -25,5 +25,10 @@
 			"password":	"y59qAqpzV",
 			"email":	"mi@g.c",
 			"checker_word":	"m"
+		}, {
+			"username":	"ali",
+			"password":	"",
+			"email":	"mir@g.c",
+			"checker_word":	"mir"
 		}]
 }
