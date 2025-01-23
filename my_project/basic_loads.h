@@ -139,10 +139,22 @@ int write_file(char* path, char* data){
     return 0;
 }
 
+// // user files
+int count_users(){
+    char* users_data = read_file("data/users.json");
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        return 0;
+    }
+
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
+    return user_number->valueint;
+}
+
 // User
 void reset_user_data(User* user){
     user->username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
-    user->password = (char *)malloc((MAX_PASSWORD + 20) * sizeof(char));
+    user->password = (char *)malloc((MAX_PASSWORD + 5) * sizeof(char));
     user->email = (char *)malloc((MAX_EMAIL) * sizeof(char));
     user->checker_w = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
 

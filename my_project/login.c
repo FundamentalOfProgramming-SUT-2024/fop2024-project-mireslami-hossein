@@ -109,7 +109,7 @@ void handle_selected_btn(int* selected, int size, int* flag){
 }
 
 
-// Validation
+// Signup Validation
 void print_error_message(WINDOW* w, int height, int width,  int reset_y, int reset_x, char* ms){
     clear_part(w, height-2, 1, height-2, width - 2);
     wattron(w, COLOR_PAIR(MESSAGE_COLOR) | A_BOLD);
@@ -196,7 +196,7 @@ bool email_validated(WINDOW* w, int height, int width, int y, int x, char* email
 }
 
 // Signup Form Handeling
-void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
+void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
     int user_ch;
     int index = 0;
 
@@ -207,6 +207,8 @@ void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* 
 
     while(1){
         user_ch = wgetch(sign_form);
+        mvprintw(0,0, "ch: %d", user_ch);
+        refresh();
 
         if(user_ch == '\n'){
             username[index] = '\0';
@@ -245,7 +247,7 @@ void get_username(WINDOW* sign_form, int height, int width, int y, int x, char* 
     clear_part(sign_form, height-2, 1, height-2, width - 2);
 }
 
-void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
+void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
     int pass_ch;
     int index = 0;
     
@@ -298,7 +300,7 @@ void get_password(WINDOW* sign_form, int height, int width, int y, int x, char* 
     wrefresh(sign_form);
 }
 
-void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* email){
+void get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char* email){
     int email_ch;
     int index = 0;
 
@@ -341,7 +343,7 @@ void get_email(WINDOW* sign_form, int height, int width, int y, int x, char* ema
     wrefresh(sign_form);
 }
 
-void get_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
+void get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
     int check_ch;
     int index = 0;
 
@@ -436,24 +438,129 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
     wrefresh(sign_form);
 }
 
-// Data
-int count_users(){
+// Login Validation
+void get_user_pass(char* target_username, char* target_pass){
     char* users_data = read_file("data/users.json");
     cJSON* root = cJSON_Parse(users_data);
     if(!root){
-        return 0;
+        return;
     }
 
-    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
-    return user_number->valueint;
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    int c = count_users();
+    for(int i = 0; i < c; i++){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+        if(strcmp(username->valuestring, target_username) == 0){
+            cJSON* pass = cJSON_GetObjectItem(user, "password");
+            strcpy(target_pass, pass->valuestring);
+            cJSON_Delete(root);
+            return;
+        }
+    }
 }
 
+
+// Login Form Handeling
+void get_login_username(WINDOW* login_form, int height, int width, int y, int x, char* username){
+    int user_ch;
+    int index = 0;
+
+    clear_part(login_form, y, x, y, width - 2);
+    wmove(login_form, y, x);
+    curs_set(TRUE);
+    noecho();
+
+    while(1){
+        user_ch = wgetch(login_form);
+
+        if(user_ch == '\n'){
+            username[index] = '\0';
+
+            if(!does_user_exist(username)){
+                print_error_message(login_form, height, width, y, x+index, "This Username does not exist!");
+            } else{
+                break;
+            }
+            continue;
+        } else if(user_ch == KEY_BACKSPACE || user_ch == 127) {
+            if (index > 0) {
+                index--;
+                username[index] = '\0';
+                mvwaddch(login_form, y, x+index, ' ');
+                wmove(login_form, y, x+index);
+            }
+            continue;
+        } else if(user_ch < 32 || user_ch > 126) {
+            continue;
+        }
+        if(index >= MAX_USERNAME){
+            continue;
+        }
+        username[index] = user_ch;
+        mvwaddch(login_form, y, x+index, user_ch);
+        wrefresh(login_form);
+        index++;
+    }
+    clear_part(login_form, height-2, 1, height-2, width - 2);
+}
+
+void get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
+    int pass_ch;
+    int index = 0;
+    
+    clear_part(login_form, y, x, y, width - 2);
+
+    wmove(login_form ,y, x);
+    curs_set(TRUE);
+    keypad(login_form, TRUE);
+    noecho();
+
+    while(1){
+        pass_ch = wgetch(login_form);
+
+        if(pass_ch == '\n'){
+            user->password[index] = '\0';
+            char target_pass[MAX_PASSWORD + 1];
+            get_user_pass(user->username, target_pass);
+            mvprintw(0,0,"entered: %s Correct: %s", user->password, target_pass);
+            refresh();
+            if(strcmp(target_pass, user->password)){
+                print_error_message(login_form, height, width, y, x+index, "Password isn't correct!");
+                continue;
+            } else{
+                break;
+            }
+        } else if(pass_ch == KEY_BACKSPACE || pass_ch == 127) {
+            if (index > 0) {
+                index--;
+                user->password[index] = '\0';
+                mvwaddch(login_form, y, x+index, ' ');
+                wmove(login_form, y, x+index);
+            }
+            continue;
+        } else if(pass_ch < 32 || pass_ch > 126) {
+            continue;
+        }
+
+        if(index >= MAX_PASSWORD){
+            continue;
+        }
+        user->password[index] = pass_ch;
+        mvwaddch(login_form, y, x+index, '*');
+        wrefresh(login_form);
+        index++;
+    }
+    clear_part(login_form, height-2, 1, height-2, width - 2);
+    wrefresh(login_form);
+}
+
+// Data
 void read_usernames(char** usernames, int number_of_users){
     char* users_data = read_file("data/users.json");
 
     cJSON* root = cJSON_Parse(users_data);
     if(!root){
-        printf("EXIT");
         return;
     }
 
@@ -497,27 +604,33 @@ void save_user_data(User user){
 }
 
 void login_user(){
-    int width = 40, height = 19;
+    int width = 40, height = 25;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
-    WINDOW* sign_form = newwin(height, width, y, x);
-    box(sign_form, 0, 0);
+    WINDOW* login_form = newwin(height, width, y, x);
+    box(login_form, 0, 0);
     refresh();
-    char title[20] = "Login Up";
+
+    char title[20] = "Login";
     start_color();
-    wattron(sign_form, COLOR_PAIR(HEADER_COLOR) | A_BOLD);
-    mvwprintw(sign_form,3,width/2 - strlen(title)/2, "%s",title);
-    wattroff(sign_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
+    wattron(login_form, COLOR_PAIR(HEADER_COLOR) | A_BOLD);
+    mvwprintw(login_form,3,width/2 - strlen(title)/2, "%s",title);
+    wattroff(login_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
     int y_start = 6;
     int x_start = 15;
     
     int selected = -1;
     int pressed = 0;
 
-    print_messages(sign_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
-    print_buttons(sign_form, login_form_buttons, 3, selected, y_start + 8, width/2);
+    print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
+    print_buttons(login_form, login_form_buttons, 3, selected, y_start + 8, width/2);
 
+    User user;
+    reset_user_data(&user);
+    get_login_username(login_form, height, width, y_start, x_start, user.username);
+    get_login_password(login_form, height, width, y_start + 2, x_start, &user);
 
+    print_error_message(login_form, height, width, y_start, x_start, "Login Successfully!!!");
 
     getchar();
 }
@@ -548,13 +661,13 @@ void signup_user(){
 
     reset_user_data(&user);
 
-    get_username(sign_form, height, width, y_start, x_start, user.username);
+    get_sign_username(sign_form, height, width, y_start, x_start, user.username);
 
-    get_password(sign_form, height, width, y_start + 2, x_start, user.password);
+    get_sign_password(sign_form, height, width, y_start + 2, x_start, user.password);
 
-    get_email(sign_form, height, width, y_start + 4, x_start, user.email);
+    get_sign_email(sign_form, height, width, y_start + 4, x_start, user.email);
 
-    get_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
+    get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
     
     selected = 0;
     while(pressed == 0){
@@ -564,7 +677,7 @@ void signup_user(){
         if(pressed == 1){
             if(selected == 0)
                 generate_random_pass(sign_form, height, width, y_start+2, x_start, user.password);
-            else{
+            else if(selected == 1){
                 save_user_data(user);
                 break;
             }
