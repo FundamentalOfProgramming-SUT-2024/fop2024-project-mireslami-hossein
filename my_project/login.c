@@ -22,7 +22,7 @@ char signup_form_labels[4][50] = {
 };
 
 char signup_form_buttons[2][50] = {
-    "Generate Random Password", "submit"
+    "Generate Random Password", "Submit"
 };
 
 char login_form_labels[2][50] = {
@@ -30,7 +30,7 @@ char login_form_labels[2][50] = {
 };
 
 char login_form_buttons[3][50] = {
-    "Login", "Login as Guest", "I Forgot My Password"
+    "Submit", "Login as Guest", "I Forgot My Password"
 };
 
 
@@ -202,6 +202,7 @@ void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, c
 
     clear_part(sign_form, y, x, y, width - 2);
     wmove(sign_form, y, x);
+    keypad(sign_form, TRUE);
     curs_set(TRUE);
     noecho();
 
@@ -469,6 +470,7 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
     clear_part(login_form, y, x, y, width - 2);
     wmove(login_form, y, x);
     curs_set(TRUE);
+    keypad(login_form, TRUE);
     noecho();
 
     while(1){
@@ -505,6 +507,20 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
     clear_part(login_form, height-2, 1, height-2, width - 2);
 }
 
+void password_forget_panel(int height, int width, int y_pass, int x_pass, User* user){
+    clear();
+    int y = LINES/2 - height/2;
+    int x = COLS/2 - width/2;
+    WINDOW* forgot_pass_win = newwin(height, width, y, x);
+    box(forgot_pass_win, 0, 0);
+    refresh();
+
+    // forget panel
+
+    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+    wrefresh(forgot_pass_win);
+}
+
 void get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
     int pass_ch;
     int index = 0;
@@ -516,19 +532,26 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
     keypad(login_form, TRUE);
     noecho();
 
+    print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER !");
     while(1){
         pass_ch = wgetch(login_form);
 
+        clear_part(login_form, height-2, 1, height-2, width - 2);
+        if(index == 0){
+            print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER !");
+        }
         if(pass_ch == '\n'){
+            if(index == 0){
+                password_forget_panel(height, width, y, x, user);
+            }
             user->password[index] = '\0';
             char target_pass[MAX_PASSWORD + 1];
             get_user_pass(user->username, target_pass);
-            mvprintw(0,0,"entered: %s Correct: %s", user->password, target_pass);
-            refresh();
             if(strcmp(target_pass, user->password)){
                 print_error_message(login_form, height, width, y, x+index, "Password isn't correct!");
                 continue;
             } else{
+                
                 break;
             }
         } else if(pass_ch == KEY_BACKSPACE || pass_ch == 127) {
@@ -630,8 +653,27 @@ void login_user(){
     get_login_username(login_form, height, width, y_start, x_start, user.username);
     get_login_password(login_form, height, width, y_start + 2, x_start, &user);
 
+    selected = 0;
+    while(pressed == 0){
+        print_buttons(login_form, login_form_buttons, 3, selected, y_start + 8, width/2);
+        handle_selected_btn(&selected, 2, &pressed);
+        if(pressed == -1){
+            endwin();
+            exit(0);
+        }
+        else if(pressed == 1){
+            // switch (selected) {
+            // case /* constant-expression */:
+            //     /* code */
+            //     break;
+            
+            // default:
+            //     break;
+            // }
+        }
+    }
+    
     print_error_message(login_form, height, width, y_start, x_start, "Login Successfully!!!");
-
     getchar();
 }
 
