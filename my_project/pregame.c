@@ -70,7 +70,7 @@ bool grade_users(){
     return TRUE;
 }
 
-void print_headers(WINDOW* w, char lb_titles[5][20], int size, int y, int x){
+void print_headers(WINDOW* w, char lb_titles[5][20], int y, int x){
     wattron(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
     mvwprintw(w, y, x, "%s", lb_titles[0]);
     mvwprintw(w, y, x + 12, "%s", lb_titles[1]);
@@ -78,6 +78,39 @@ void print_headers(WINDOW* w, char lb_titles[5][20], int size, int y, int x){
     mvwprintw(w, y, x + 42, "%s", lb_titles[3]);
     mvwprintw(w, y, x + 56, "%s", lb_titles[4]);
     wattroff(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
+    wrefresh(w);
+    refresh();
+}
+// mode: 1:default 2:User 3:Top Users
+void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
+    switch (mode) {
+    case 1:
+        mvwprintw(w, y, x_start, "%d", user.rank);
+        mvwprintw(w, y, x_start + 12, "%s", user.username);
+        mvwprintw(w, y, x_start + 28, "%d", user.points);
+        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
+        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
+        break;
+    case 2:
+        wattron(w, A_BOLD);
+        mvwprintw(w, y, x_start, "%d", user.rank);
+        mvwprintw(w, y, x_start + 12, "%s", user.username);
+        mvwprintw(w, y, x_start + 28, "%d", user.points);
+        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
+        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
+        wattroff(w, A_BOLD);
+        break;
+    case 3:
+        wattron(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
+        mvwprintw(w, y, x_start, "%d", user.rank);
+        mvwprintw(w, y, x_start + 12, "Legend %s", user.username);
+        mvwprintw(w, y, x_start + 28, "%d", user.points);
+        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
+        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
+        wattroff(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
+        break;
+    }
+    
     wrefresh(w);
     refresh();
 }
@@ -89,6 +122,34 @@ void print_users(WINDOW* w, User user, int height, int width, int y_start, int x
         mvwprintw(w, (height - y_start)/2 + y_start/2, width/2 - strlen(ms)/2, "%s", ms);
         wattroff(w, COLOR_PAIR(TEXT_COLOR));
         wrefresh(w);
+    } else{
+        char* users_data = read_file("data/users.json");
+    
+        cJSON* root = cJSON_Parse(users_data);
+        cJSON* users = cJSON_GetObjectItem(root, "users");
+
+        free(users_data);
+
+        int c = count_users();
+        for (int i = 0; i < c; i++) {
+            int mode = 1;
+
+            cJSON* t_user = cJSON_GetArrayItem(users, i);
+            User t_user_data;
+            t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
+            strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
+            if(!user.is_guest && strcmp(t_user_data.username, user.username) == 0)
+                mode = 2;
+
+            t_user_data.points = cJSON_GetObjectItem(t_user, "points")->valueint;
+            t_user_data.ended_games = cJSON_GetObjectItem(t_user, "ended_games")->valueint;
+            t_user_data.experience = cJSON_GetObjectItem(t_user, "experience")->valueint;
+            
+            if(i <= 2)
+                mode = 3;
+            
+            print_userdata(w, t_user_data, y_start + 2*i, x_start, mode);
+        }
     }
 
 
@@ -108,7 +169,7 @@ void show_leaderboard(User user){
     int y_start = 6;
     int x_start = 4;
     print_title(lb_table, "LeaderBoard", 2, x);
-    print_headers(lb_table, lb_titles, 5, y_start, x_start);
+    print_headers(lb_table, lb_titles, y_start, x_start);
 
     print_users(lb_table, user, height, width, y_start + 2, x_start + 2, 7);
     getch();
