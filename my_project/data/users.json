@@ -1,14 +1,9 @@
 {
-	"users_number":	2,
+	"users_number":	1,
 	"users":	[{
 			"username":	"mir",
-			"password":	"Mires809",
+			"password":	"Mireslami809",
 			"email":	"m@g.c",
-			"checker_word":	"mir"
-		}, {
-			"username":	"hmir",
-			"password":	"Mires809",
-			"email":	"mir@g.c",
 			"checker_word":	"mir"
 		}]
 }

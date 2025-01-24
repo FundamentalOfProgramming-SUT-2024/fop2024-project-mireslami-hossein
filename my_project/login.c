@@ -554,6 +554,7 @@ void get_forgot_checker_word(WINDOW* forgot_pass_win, int height, int width, int
     wrefresh(forgot_pass_win);
 }
 
+void update_user_pass(User t_user);
 void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int y, int x, User* user){
     int ch;
     char password[MAX_PASSWORD + 1];
@@ -596,6 +597,7 @@ void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int
     }
     password[index] = '\0';
     strcpy(user->password, password);
+    update_user_pass(*user);
     clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
 }
 
@@ -670,10 +672,10 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
 
             if(!does_user_exist(username)){
                 print_error_message(login_form, height, width, y, x+index, "This Username does not exist!");
+                continue;
             } else{
                 break;
             }
-            continue;
         } else if(user_ch == KEY_BACKSPACE || user_ch == 127) {
             if (index > 0) {
                 index--;
@@ -711,9 +713,9 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
     print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
     while(1){
         pass_ch = wgetch(login_form);
-        
+        clear_part(login_form, height-2, 1, height-2, width - 2);
+        if(index == 0) print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
         if(pass_ch == '\n' && index == 0 && !password_reset){
-            print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
             password_reset = true;
             break;
         }
@@ -796,6 +798,27 @@ void save_user_data(User user){
     cJSON_AddItemToObject(user_data, "checker_word", cJSON_CreateString(user.checker_w));
 
     cJSON_AddItemToArray(users, user_data);
+
+    char* file_data = cJSON_Print(root);
+    write_file("data/users.json", file_data);
+}
+
+void update_user_pass(User t_user){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
+    for(int i = 0; i < user_number->valueint; i++){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+
+        if(strcmp(username->valuestring, t_user.username) == 0){
+            cJSON* password = cJSON_GetObjectItem(user, "password");
+            cJSON_SetValuestring(password, t_user.password);
+            break;
+        }
+    }
 
     char* file_data = cJSON_Print(root);
     write_file("data/users.json", file_data);
