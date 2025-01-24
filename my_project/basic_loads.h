@@ -19,6 +19,7 @@
 #define CUSTOM_CYAN 12
 #define CUSTOM_GREEN 13
 #define CUSTOM_ORANGE 14
+#define CUSTOM_YELLOW 15
 
 // New PAIRS
 #define BG_LOGIN 0
@@ -270,13 +271,14 @@ void game_initalize(){
     add_color_rgb(CUSTOM_GREEN, 93, 255, 101);
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
+    add_color_rgb(CUSTOM_YELLOW, 245, 255, 155);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
     init_pair(BTN_SELECTED,COLOR_BLACK , COLOR_CYAN);
     init_pair(BG_LOGIN, COLOR_PURPLE, COLOR_PURPLE);
     init_pair(HEADER_COLOR, CUSTOM_CYAN, COLOR_BLACK);
-    init_pair(TEXT_COLOR, COLOR_WHITE, COLOR_BLACK);
+    init_pair(TEXT_COLOR, CUSTOM_YELLOW, COLOR_BLACK);
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
     init_pair(BTN_DEFAULT_2, CUSTOM_GREEN, COLOR_BLACK);
     init_pair(BTN_SELECTED_2, COLOR_BLACK , CUSTOM_GREEN);
