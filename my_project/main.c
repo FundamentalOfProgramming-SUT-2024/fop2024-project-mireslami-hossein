@@ -22,17 +22,17 @@ int main(){
     noecho();
     curs_set(FALSE);
 
-    if(!has_colors()){
-        endwin();
-        printf("Sorry! Your Terminal Doesn't support colors!\n");
-        return 0;
-    }
+    // if(!has_colors()){
+    //     endwin();
+    //     printf("Sorry! Your Terminal Doesn't support colors!\n");
+    //     return 0;
+    // }
 
-    game_initalize();
+    // game_initalize();
     User user;
     reset_user_data(&user);
 
-    load_first_page(&user);
+    // load_first_page(&user);
     load_pregame_page(&user);
     
     endwin();
