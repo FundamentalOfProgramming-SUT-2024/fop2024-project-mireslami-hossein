@@ -187,7 +187,7 @@ void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, c
 
     while(1){
         pass_ch = wgetch(sign_form);
-
+        clear_part(sign_form, height-2, 1, height-2, width - 2);
         if(pass_ch == '\n'){
             if(index == 0){
                 generate_random_pass(sign_form, height, width, y, x, password);

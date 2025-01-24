@@ -47,8 +47,8 @@ void show_leaderboard(User user){
     int x_start = 4;
     print_title(lb_table, "LeaderBoard", 2, x);
     print_headers(lb_table, lb_titles, 5, y_start, x_start);
-    
-    print_users();
+
+    // print_users();
     getch();
 }
 
