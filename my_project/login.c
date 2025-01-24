@@ -36,81 +36,6 @@ char pass_form_labels[4][50] = {
 };
 
 
-void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
-    wattron(w, COLOR_PAIR(color_id));
-    if(type == 'c'){
-        for(int i = 0; i < size; i++){
-            int ms_len = strlen(ms[i]);
-            int x_m = x - ms_len/2;
-            int y_m = y + i*2;
-            mvwprintw(w,y_m, x_m, "%s", ms[i]);
-        }
-    } else if(type == 'r'){
-        for(int i = 0; i < size; i++){
-            int ms_len = strlen(ms[i]);
-            int x_m = x - ms_len;
-            int y_m = y + i*2;
-            mvwprintw(w,y_m, x_m, "%s", ms[i]);
-        }
-    } else if(type == 'l'){
-        for(int i = 0; i < size; i++){
-            int x_m = x;
-            int y_m = y + i*2;
-            mvwprintw(w,y_m, x_m, "%s", ms[i]);
-        }
-    }
-    wrefresh(w);
-    wattroff(w, COLOR_PAIR(color_id));
-}
-
-void print_buttons(WINDOW* w, char btns[][50], int size, int selected, int y, int x){
-    wattron(w, A_BOLD);
-    
-    for(int i = 0; i < size; i ++){
-        int btn_len = strlen(btns[i]);
-        int x_m = x - btn_len/2;
-        int y_m = y + i*2 + 1;
-        if(i == selected){
-            wattron(w, COLOR_PAIR(BTN_SELECTED));
-            mvwprintw(w,y_m, x_m, "%s", btns[i]);
-            wattroff(w, COLOR_PAIR(BTN_SELECTED));
-        } else{
-            wattron(w, COLOR_PAIR(BTN_DEFAULT));
-            mvwprintw(w,y_m, x_m, "%s", btns[i]);
-            wattroff(w, COLOR_PAIR(BTN_DEFAULT));
-        }
-    }
-    wrefresh(w);
-    wattroff(w, A_BOLD);
-}
-
-
-void handle_selected_btn(int* selected, int size, int* flag){
-    int ch = getch();
-
-    switch (ch)
-    {
-    case KEY_UP:
-        (*selected)--;
-        if(*selected < 0) *selected = size - 1;
-        break;
-    case KEY_DOWN:
-        (*selected)++;
-        if(*selected >= size) *selected = 0;
-        break;
-    
-    // on press Enter
-    case 10: case 13:
-        *flag = 1;
-        break;
-    
-    case 'q':case 'Q':
-        *flag = -1;
-        break;
-    }
-}
-
-
 // Signup Validation
 void print_error_message(WINDOW* w, int height, int width,  int reset_y, int reset_x, char* ms){
     clear_part(w, height-2, 1, height-2, width - 2);
@@ -622,7 +547,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
     int x_start = 17;
 
     print_messages(forgot_pass_win, pass_form_labels, 3, y_start, x_start, 'r', LABEL_COLOR);
-    print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2);
+    print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2, 1);
 
     mvwprintw(forgot_pass_win, y_start, x_start, "%s", user->username);
     wrefresh(forgot_pass_win);
@@ -639,7 +564,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
 
     selected = 0;
     while(pressed == 0){
-        print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2);
+        print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2, 1);
         handle_selected_btn(&selected, 1, &pressed);
         if(pressed == -1){
             endwin();
@@ -849,7 +774,7 @@ void login_user(User* user){
     int pressed = 0;
 
     print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
-    print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2);
+    print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2, 1);
 
     get_login_username(login_form, height, width, y_start, x_start, user->username);
     get_login_password(login_form, height, width, y_start + 2, x_start, user);
@@ -859,7 +784,7 @@ void login_user(User* user){
     curs_set(FALSE);
     selected = 0;
     while(pressed == 0){
-        print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2);
+        print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2, 1);
         handle_selected_btn(&selected, 1, &pressed);
         if(pressed == -1){
             endwin();
@@ -892,7 +817,7 @@ void signup_user(User* user){
     
     int selected = -1;
     int pressed = 0;
-    print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
+    print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2, 1);
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
 
@@ -908,7 +833,7 @@ void signup_user(User* user){
 
     selected = 0;
     while(pressed == 0){
-        print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
+        print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2, 1);
         handle_selected_btn(&selected, 2, &pressed);
         
         if(pressed == 1){
@@ -967,7 +892,7 @@ void load_first_page(User* user){
     
     while(!exit_flag){
         print_messages(menu, entry_messages, message_num, 2, width/2, 'c', HEADER_COLOR);
-        print_buttons(menu, entry_options, btn_nums, selected_btn, 9, width/2);
+        print_buttons(menu, entry_options, btn_nums, selected_btn, 9, width/2, 1);
         
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);
     }

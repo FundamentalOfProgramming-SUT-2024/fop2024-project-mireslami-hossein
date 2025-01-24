@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ncurses.h>
 #include <time.h>
 #include "cjson/cJSON.h"
@@ -25,8 +26,11 @@
 #define BTN_DEFAULT 2
 #define BTN_SELECTED 3
 #define HEADER_COLOR 4
-#define TEXT_COLOR 5
 #define LABEL_COLOR 5
+#define TEXT_COLOR 6
+
+#define BTN_DEFAULT_2 7
+#define BTN_SELECTED_2 8
 
 // Structs
 typedef struct{
@@ -68,6 +72,98 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
         }
     }
     wrefresh(w);
+}
+
+void print_title(WINDOW* w, char* title, int y, int x){
+    wattron(w, A_BOLD | COLOR_PAIR(HEADER_COLOR));
+    mvwprintw(w, y, x - strlen(title)/2, "%s", title);
+    wattroff(w, A_BOLD | COLOR_PAIR(HEADER_COLOR));
+    wrefresh(w);
+}
+
+void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
+    wattron(w, COLOR_PAIR(color_id));
+    if(type == 'c'){
+        for(int i = 0; i < size; i++){
+            int ms_len = strlen(ms[i]);
+            int x_m = x - ms_len/2;
+            int y_m = y + i*2;
+            mvwprintw(w,y_m, x_m, "%s", ms[i]);
+        }
+    } else if(type == 'r'){
+        for(int i = 0; i < size; i++){
+            int ms_len = strlen(ms[i]);
+            int x_m = x - ms_len;
+            int y_m = y + i*2;
+            mvwprintw(w,y_m, x_m, "%s", ms[i]);
+        }
+    } else if(type == 'l'){
+        for(int i = 0; i < size; i++){
+            int x_m = x;
+            int y_m = y + i*2;
+            mvwprintw(w,y_m, x_m, "%s", ms[i]);
+        }
+    }
+    wrefresh(w);
+    wattroff(w, COLOR_PAIR(color_id));
+}
+
+void print_buttons(WINDOW* w, char btns[][50], int size, int selected, int y, int x, int color_mode){
+    wattron(w, A_BOLD);
+    
+    for(int i = 0; i < size; i ++){
+        int btn_len = strlen(btns[i]);
+        int x_m = x - btn_len/2;
+        int y_m = y + i*2 + 1;
+        if(i == selected){
+            if(color_mode == 1){
+                wattron(w, COLOR_PAIR(BTN_SELECTED));
+                mvwprintw(w,y_m, x_m, "%s", btns[i]);
+                wattroff(w, COLOR_PAIR(BTN_SELECTED));
+            } else if(color_mode == 2){
+                wattron(w, COLOR_PAIR(BTN_SELECTED_2));
+                mvwprintw(w,y_m, x_m, "%s", btns[i]);
+                wattroff(w, COLOR_PAIR(BTN_SELECTED_2));
+            } 
+        } else{
+            if(color_mode == 1){
+                wattron(w, COLOR_PAIR(BTN_DEFAULT));
+                mvwprintw(w,y_m, x_m, "%s", btns[i]);
+                wattroff(w, COLOR_PAIR(BTN_DEFAULT));
+            } else if(color_mode == 2){
+                wattron(w, COLOR_PAIR(BTN_DEFAULT_2));
+                mvwprintw(w,y_m, x_m, "%s", btns[i]);
+                wattroff(w, COLOR_PAIR(BTN_DEFAULT_2));
+            }
+        }
+    }
+    wrefresh(w);
+    wattroff(w, A_BOLD);
+}
+
+void handle_selected_btn(int* selected, int size, int* flag){
+    int ch = getch();
+
+    switch (ch)
+    {
+    case KEY_UP:
+        (*selected)--;
+        if(*selected < 0) *selected = size - 1;
+        break;
+    case KEY_DOWN:
+        (*selected)++;
+        if(*selected >= size) *selected = 0;
+        break;
+    
+    // on press Enter
+    case 10: case 13:
+        *flag = 1;
+        break;
+    
+    case 'q':case 'Q':
+        *flag = -1;
+        break;
+    }
 }
 
 
@@ -142,7 +238,6 @@ int write_file(char* path, char* data){
     return 0;
 }
 
-// // user files
 int count_users(){
     char* users_data = read_file("data/users.json");
     cJSON* root = cJSON_Parse(users_data);
@@ -183,7 +278,8 @@ void game_initalize(){
     init_pair(HEADER_COLOR, CUSTOM_CYAN, COLOR_BLACK);
     init_pair(TEXT_COLOR, COLOR_WHITE, COLOR_BLACK);
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
-
+    init_pair(BTN_DEFAULT_2, CUSTOM_GREEN, COLOR_BLACK);
+    init_pair(BTN_SELECTED_2, COLOR_BLACK , CUSTOM_GREEN);
     srand(time(NULL));
 }
 

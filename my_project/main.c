@@ -11,6 +11,7 @@ gcc main.c -o game.out -lncurses -lcjson && ./game.out
 
 #include "basic_loads.h"
 #include "login.c"
+#include "pregame.c"
 
 
 
@@ -32,8 +33,7 @@ int main(){
     reset_user_data(&user);
 
     load_first_page(&user);
-    
-    refresh();
+    load_pregame_page(&user);
     
     endwin();
 }
