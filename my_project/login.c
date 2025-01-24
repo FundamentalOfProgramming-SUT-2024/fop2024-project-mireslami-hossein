@@ -32,8 +32,9 @@ char login_form_buttons[1][50] = {
 };
 // Password Recovery
 char pass_form_labels[5][50] = {
-    "Username: ", "Email: ", "Checker Word: ", "New password:", "New password repeat: "
+    "Username: ", "Email: ", "Checker Word: ", "New password: "
 };
+
 
 void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
     wattron(w, COLOR_PAIR(color_id));
@@ -252,7 +253,7 @@ void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, c
     int index = 0;
     
     clear_part(sign_form, y, x, y, width - 2);
-    print_error_message(sign_form, height, width, y, x, "if you want to generate random pass press ENTER!");
+    print_error_message(sign_form, height, width, y, x, "If you want to generate random pass press ENTER!");
 
     wmove(sign_form ,y, x);
     curs_set(TRUE);
@@ -507,6 +508,100 @@ void get_forgot_email(WINDOW* forgot_pass_win, int height, int width, int y, int
     wrefresh(forgot_pass_win);
 }
 
+void get_forgot_checker_word(WINDOW* forgot_pass_win, int height, int width, int y, int x, User* user){
+    int ch;
+    int index = 0;
+
+    wmove(forgot_pass_win, y, x);
+    curs_set(TRUE);
+    keypad(forgot_pass_win, TRUE);
+    noecho();
+
+    while(1){
+        ch =  wgetch(forgot_pass_win);
+
+        if(ch == '\n'){
+            user->checker_w[index] = '\0';
+            char target_checkw[MAX_USERNAME + 1];
+            get_user_detail_by_username(user->username, "checker_word", target_checkw);
+            if(strcmp(target_checkw, user->checker_w)){
+                print_error_message(forgot_pass_win, height, width, y, x+index, "Checker Word isn't correct!");
+                continue;
+            } else{
+                break;
+            }
+        } else if(ch == KEY_BACKSPACE || ch == 127) {
+            if (index > 0) {
+                index--;
+                user->checker_w[index] = '\0';
+                mvwaddch(forgot_pass_win, y, x+index, ' ');
+                wmove(forgot_pass_win, y, x+index);
+            }
+            continue;
+        } else if(ch < 32 || ch > 126) {
+            continue;
+        }
+        if(index >= MAX_USERNAME){
+            continue;
+        }
+        mvwaddch(forgot_pass_win, y, x+index, ch);
+        user->checker_w[index] = ch;
+        index++;
+    }
+
+    user->checker_w[index] = '\0';
+    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+    wrefresh(forgot_pass_win);
+}
+
+void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int y, int x, User* user){
+    int ch;
+    char password[MAX_PASSWORD + 1];
+    int index = 0;
+
+    wmove(forgot_pass_win, y, x);
+    curs_set(TRUE);
+    keypad(forgot_pass_win, TRUE);
+    noecho();
+
+    while(1){
+        ch =  wgetch(forgot_pass_win);
+
+        if(ch == '\n'){
+            password[index] = '\n';
+            if(password_validated(forgot_pass_win, height, width, height - 2, width/2, password)){
+                strcpy(user->password, password);
+                break;
+            }
+        } else if(ch == KEY_BACKSPACE || ch == 127) {
+            if (index > 0) {
+                index--;
+                password[index] = '\0';
+                mvwaddch(forgot_pass_win, y, x+index, ' ');
+                wmove(forgot_pass_win, y, x+index);
+            }
+            continue;
+        } else if(ch < 32 || ch > 126) {
+            continue;
+        }
+        if(index >= MAX_USERNAME){
+            continue;
+        }
+        mvwaddch(forgot_pass_win, y, x+index, '*');
+        password[index] = ch;
+        
+        mvprintw(0,0+index, "%c", password[index]);
+        refresh();
+        
+        index++;
+    }
+
+    password[index] = '\0';
+    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+    delwin(forgot_pass_win);
+    clear();
+}
+
 void login_user(User* user);
 void password_forget_panel(int height, int width, int y_pass, int x_pass, User* user){
     clear();
@@ -537,9 +632,9 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
 
     get_forgot_checker_word(forgot_pass_win, height, width, y_start + 4, x_start, user);
 
-    // print_messages(forgot_pass_win, pass_form_labels, 5, y_start, x_start, 'r', LABEL_COLOR);
+    print_messages(forgot_pass_win, pass_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
-    // get_forgot_new_password();
+    get_forgot_new_password(forgot_pass_win, height, width, y_start + 6, x_start, user);
 
     selected = 0;
     while(pressed == 0){
@@ -555,7 +650,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
     }
 
     clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
-    wrefresh(forgot_pass_win);
+    clear();
     delwin(forgot_pass_win);
 }
 
@@ -625,7 +720,7 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
         }
         if(pass_ch == '\n'){
             if(index == 0){
-                password_forget_panel(height, width, y, x, user);
+                password_forget_panel(height, width + 5, y, x, user);
             }
             user->password[index] = '\0';
             char target_pass[MAX_PASSWORD + 1];
