@@ -9,30 +9,31 @@
 #include "basic_loads.h"
 
 
-char login_messages[3][50] = {
+char entry_messages[3][50] = {
     "Welcome!", "Choose a way to continue:", "(Q to exit)"
 };
-
-char login_items[2][50] = {
-    "Sign Up", "Login"
+char entry_options[3][50] = {
+    "Sign Up", "Login", "Login as Guest"
 };
 
 char signup_form_labels[4][50] = {
     "Username*: ", "Password*: ", "Email*: ", "Checker Word: "
 };
-
 char signup_form_buttons[2][50] = {
     "Generate Random Password", "Submit"
 };
 
+// Login by user pass
 char login_form_labels[2][50] = {
     "Username: ", "Password: "
 };
-
-char login_form_buttons[3][50] = {
-    "Submit", "Login as Guest", "I Forgot My Password"
+char login_form_buttons[1][50] = {
+    "Submit"
 };
-
+// Password Recovery
+char pass_form_labels[5][50] = {
+    "Username: ", "Email: ", "Checker Word: ", "New password:", "New password repeat: "
+};
 
 void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
     wattron(w, COLOR_PAIR(color_id));
@@ -208,8 +209,6 @@ void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, c
 
     while(1){
         user_ch = wgetch(sign_form);
-        mvprintw(0,0, "ch: %d", user_ch);
-        refresh();
 
         if(user_ch == '\n'){
             username[index] = '\0';
@@ -626,7 +625,7 @@ void save_user_data(User user){
     write_file("data/users.json", file_data);
 }
 
-void login_user(){
+void login_user(User* user){
     int width = 40, height = 25;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
@@ -639,6 +638,7 @@ void login_user(){
     wattron(login_form, COLOR_PAIR(HEADER_COLOR) | A_BOLD);
     mvwprintw(login_form,3,width/2 - strlen(title)/2, "%s",title);
     wattroff(login_form, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
+
     int y_start = 6;
     int x_start = 15;
     
@@ -646,30 +646,21 @@ void login_user(){
     int pressed = 0;
 
     print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
-    print_buttons(login_form, login_form_buttons, 3, selected, y_start + 8, width/2);
+    print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2);
 
-    User user;
-    reset_user_data(&user);
-    get_login_username(login_form, height, width, y_start, x_start, user.username);
-    get_login_password(login_form, height, width, y_start + 2, x_start, &user);
+    get_login_username(login_form, height, width, y_start, x_start, user->username);
+    get_login_password(login_form, height, width, y_start + 2, x_start, user);
 
     selected = 0;
     while(pressed == 0){
-        print_buttons(login_form, login_form_buttons, 3, selected, y_start + 8, width/2);
-        handle_selected_btn(&selected, 2, &pressed);
+        print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2);
+        handle_selected_btn(&selected, 1, &pressed);
         if(pressed == -1){
             endwin();
             exit(0);
         }
         else if(pressed == 1){
-            // switch (selected) {
-            // case /* constant-expression */:
-            //     /* code */
-            //     break;
-            
-            // default:
-            //     break;
-            // }
+            // Open Game Page
         }
     }
     
@@ -677,7 +668,7 @@ void login_user(){
     getchar();
 }
 
-void signup_user(){
+void signup_user(User* user){
     int width = 50, height = 26;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
@@ -699,17 +690,14 @@ void signup_user(){
     print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
-    User user;
 
-    reset_user_data(&user);
+    get_sign_username(sign_form, height, width, y_start, x_start, user->username);
 
-    get_sign_username(sign_form, height, width, y_start, x_start, user.username);
+    get_sign_password(sign_form, height, width, y_start + 2, x_start, user->password);
 
-    get_sign_password(sign_form, height, width, y_start + 2, x_start, user.password);
+    get_sign_email(sign_form, height, width, y_start + 4, x_start, user->email);
 
-    get_sign_email(sign_form, height, width, y_start + 4, x_start, user.email);
-
-    get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user.checker_w);
+    get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
     
     selected = 0;
     while(pressed == 0){
@@ -718,9 +706,9 @@ void signup_user(){
         
         if(pressed == 1){
             if(selected == 0)
-                generate_random_pass(sign_form, height, width, y_start+2, x_start, user.password);
+                generate_random_pass(sign_form, height, width, y_start+2, x_start, user->password);
             else if(selected == 1){
-                save_user_data(user);
+                save_user_data(*user);
                 break;
             }
             pressed = 0;
@@ -733,21 +721,24 @@ void signup_user(){
     }
 
     int c = getch();
+    delwin(sign_form);
 }
 
 
-void open_form(int selected){
+void open_form(int selected, User* user){
     clear();
     // Sign Up
     if(selected == 0){
-        signup_user();
+        signup_user(user);
     } else if(selected == 1){
-        login_user();
+        login_user(user);
+    } else if(selected == 2){
+        // login_as_guest(user);
     }
     refresh();
 }
 
-void load_first_page(){
+void load_first_page(User* user){
     clear();
 
     start_color();
@@ -755,7 +746,7 @@ void load_first_page(){
 
     int selected_btn = 0;
     int exit_flag = 0;
-    int btn_nums = 2;
+    int btn_nums = 3;
     int message_num = 3;
 
     int height = 18, width = 35;
@@ -768,8 +759,8 @@ void load_first_page(){
 
     
     while(!exit_flag){
-        print_messages(menu, login_messages, message_num, 2, width/2, 'c', HEADER_COLOR);
-        print_buttons(menu, login_items, btn_nums, selected_btn, 9, width/2);
+        print_messages(menu, entry_messages, message_num, 2, width/2, 'c', HEADER_COLOR);
+        print_buttons(menu, entry_options, btn_nums, selected_btn, 9, width/2);
         
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);
     }
@@ -780,5 +771,5 @@ void load_first_page(){
     }
 
     delwin(menu);
-    open_form(selected_btn);
+    open_form(selected_btn, user);
 }

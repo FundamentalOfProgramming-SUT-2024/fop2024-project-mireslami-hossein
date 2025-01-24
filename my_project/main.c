@@ -32,7 +32,10 @@ int main(){
     }
 
     game_initalize();
-    load_first_page();
+    User user;
+    reset_user_data(&user);
+
+    load_first_page(&user);
     
     refresh();
     
