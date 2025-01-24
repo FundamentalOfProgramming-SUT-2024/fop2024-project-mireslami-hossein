@@ -49,14 +49,15 @@ typedef struct {
     char* checker_w;
     bool is_guest;
 
+    int rank;
     int points;
     int golds;
-    int rank;
-    
-    time_t first_game;
-    
-    Game* last_game;
     int ended_games;
+    
+    // Time to first Game
+    time_t experience;
+    
+    int last_game_id;
 
 } User;
 
@@ -262,6 +263,65 @@ void reset_user_data(User* user){
     user->golds = 0;
     user->ended_games = 0;
 
+    user->last_game_id = -1;
+    user->experience = 0;
+}
+
+void get_user_detail_by_username(char* target_username, char* data, char* value){
+    char* users_data = read_file("data/users.json");
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        return;
+    }
+
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    int c = count_users();
+    for(int i = 0; i < c; i++){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+        if(strcmp(username->valuestring, target_username) == 0){
+            cJSON* detail = cJSON_GetObjectItem(user, data);
+            strcpy(value, detail->valuestring);
+            cJSON_Delete(root);
+            return;
+        }
+    }
+}
+
+void save_user_data(User user){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        root = cJSON_CreateObject();
+        cJSON_AddNumberToObject(root, "users_number", 0);
+        cJSON* users = cJSON_CreateArray();
+        cJSON_AddItemToObject(root, "users", users);
+    }
+    
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
+
+    cJSON_SetIntValue(user_number, user_number->valueint+1);
+    cJSON *user_data = cJSON_CreateObject();
+    cJSON_AddItemToObject(user_data, "username", cJSON_CreateString(user.username));
+    cJSON_AddItemToObject(user_data, "password", cJSON_CreateString(user.password));
+    cJSON_AddItemToObject(user_data, "email", cJSON_CreateString(user.email));
+    cJSON_AddItemToObject(user_data, "checker_word", cJSON_CreateString(user.checker_w));
+    
+    cJSON_AddItemToObject(user_data, "rank", cJSON_CreateNumber(user.rank));
+    cJSON_AddItemToObject(user_data, "points", cJSON_CreateNumber(user.points));
+    cJSON_AddItemToObject(user_data, "golds", cJSON_CreateNumber(user.golds));
+    cJSON_AddItemToObject(user_data, "ended_games", cJSON_CreateNumber(user.ended_games));
+    
+    cJSON_AddItemToObject(user_data, "lastgame_id", cJSON_CreateNumber(user.last_game_id));
+    cJSON_AddItemToObject(user_data, "experience", cJSON_CreateNumber(user.experience));
+
+    cJSON_AddItemToArray(users, user_data);
+
+    char* file_data = cJSON_Print(root);
+    write_file("data/users.json", file_data);
 }
 
 void game_initalize(){

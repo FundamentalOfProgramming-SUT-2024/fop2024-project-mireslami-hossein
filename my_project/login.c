@@ -364,27 +364,6 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
     wrefresh(sign_form);
 }
 
-// Login Validation
-void get_user_detail_by_username(char* target_username, char* data, char* value){
-    char* users_data = read_file("data/users.json");
-    cJSON* root = cJSON_Parse(users_data);
-    if(!root){
-        return;
-    }
-
-    cJSON* users = cJSON_GetObjectItem(root, "users");
-    int c = count_users();
-    for(int i = 0; i < c; i++){
-        cJSON* user = cJSON_GetArrayItem(users, i);
-        cJSON* username = cJSON_GetObjectItem(user, "username");
-        if(strcmp(username->valuestring, target_username) == 0){
-            cJSON* detail = cJSON_GetObjectItem(user, data);
-            strcpy(value, detail->valuestring);
-            cJSON_Delete(root);
-            return;
-        }
-    }
-}
 
 // Login Pass Forgotten
 void get_forgot_email(WINDOW* forgot_pass_win, int height, int width, int y, int x, User* user){
@@ -698,34 +677,6 @@ void read_usernames(char** usernames, int number_of_users){
     }
     cJSON_Delete(root);
     free(users_data);
-}
-
-void save_user_data(User user){
-    char* users_data = read_file("data/users.json");
-
-    cJSON* root = cJSON_Parse(users_data);
-    if(!root){
-        root = cJSON_CreateObject();
-        cJSON_AddNumberToObject(root, "users_number", 0);
-        cJSON* users = cJSON_CreateArray();
-        cJSON_AddItemToObject(root, "users", users);
-    }
-    
-    cJSON* users = cJSON_GetObjectItem(root, "users");
-    
-    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
-
-    cJSON_SetIntValue(user_number, user_number->valueint+1);
-    cJSON *user_data = cJSON_CreateObject();
-    cJSON_AddItemToObject(user_data, "username", cJSON_CreateString(user.username));
-    cJSON_AddItemToObject(user_data, "password", cJSON_CreateString(user.password));
-    cJSON_AddItemToObject(user_data, "email", cJSON_CreateString(user.email));
-    cJSON_AddItemToObject(user_data, "checker_word", cJSON_CreateString(user.checker_w));
-
-    cJSON_AddItemToArray(users, user_data);
-
-    char* file_data = cJSON_Print(root);
-    write_file("data/users.json", file_data);
 }
 
 void update_user_pass(User t_user){
