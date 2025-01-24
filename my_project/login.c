@@ -31,7 +31,7 @@ char login_form_buttons[1][50] = {
     "Submit"
 };
 // Password Recovery
-char pass_form_labels[5][50] = {
+char pass_form_labels[4][50] = {
     "Username: ", "Email: ", "Checker Word: ", "New password: "
 };
 
@@ -568,11 +568,13 @@ void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int
         ch =  wgetch(forgot_pass_win);
 
         if(ch == '\n'){
-            password[index] = '\n';
-            if(password_validated(forgot_pass_win, height, width, height - 2, width/2, password)){
-                strcpy(user->password, password);
+            password[index] = '\0';
+            if(password_validated(forgot_pass_win, height, width, y, x+index, password)){
                 break;
+            } else{
+                continue;
             }
+
         } else if(ch == KEY_BACKSPACE || ch == 127) {
             if (index > 0) {
                 index--;
@@ -589,17 +591,12 @@ void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int
         }
         mvwaddch(forgot_pass_win, y, x+index, '*');
         password[index] = ch;
-        
-        mvprintw(0,0+index, "%c", password[index]);
-        refresh();
-        
+
         index++;
     }
-
     password[index] = '\0';
+    strcpy(user->password, password);
     clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
-    delwin(forgot_pass_win);
-    clear();
 }
 
 void login_user(User* user);
@@ -620,7 +617,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
     int selected = -1;
     int pressed = 0;
     int y_start = 6;
-    int x_start = 15;
+    int x_start = 17;
 
     print_messages(forgot_pass_win, pass_form_labels, 3, y_start, x_start, 'r', LABEL_COLOR);
     print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2);
@@ -645,13 +642,14 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
             exit(0);
         }
         else if(pressed == 1){
+            clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+            clear();
+            delwin(forgot_pass_win);
             login_user(user);
         }
     }
 
-    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
-    clear();
-    delwin(forgot_pass_win);
+    
 }
 
 // Login Form Handeling
@@ -720,7 +718,7 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
         }
         if(pass_ch == '\n'){
             if(index == 0){
-                password_forget_panel(height, width + 5, y, x, user);
+                password_forget_panel(height, width + 10, y, x, user);
             }
             user->password[index] = '\0';
             char target_pass[MAX_PASSWORD + 1];
