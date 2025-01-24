@@ -251,6 +251,26 @@ int count_users(){
     return user_number->valueint;
 }
 
+void read_usernames(char** usernames, int number_of_users){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    if(!root){
+        return;
+    }
+
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    
+    for(int i = 0; i < number_of_users; ++i){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+        strcpy(usernames[i], username->valuestring);
+    }
+    cJSON_Delete(root);
+    free(users_data);
+}
+
+
 // User
 void reset_user_data(User* user){
     user->username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));

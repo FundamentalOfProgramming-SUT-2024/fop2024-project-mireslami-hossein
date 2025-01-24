@@ -20,6 +20,56 @@ char lb_titles[5][20] = {
 };
 
 // Leaderboard
+typedef struct {
+    cJSON* user;
+    int points;
+    int original_index;
+} UserData;
+
+int compare_users(const void* a, const void* b) {
+    UserData* userA = (UserData*)a;
+    UserData* userB = (UserData*)b;
+    return userB->points - userA->points;
+}
+
+bool grade_users(){
+    char* users_data = read_file("data/users.json");
+    
+    cJSON* root = cJSON_Parse(users_data);
+    free(users_data);
+    if(root == NULL){
+        return FALSE;
+    }
+    int c = count_users();
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+
+    UserData* user_list = (UserData*)malloc(c * sizeof(UserData));
+
+    for (int i = 0; i < c; i++) {
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* points = cJSON_GetObjectItem(user, "points");
+        user_list[i].user = user;
+        user_list[i].points = points ? points->valueint : 0;
+        user_list[i].original_index = i;
+    }
+
+    qsort(user_list, c, sizeof(UserData), compare_users);
+
+    // set ranks to users
+    for (int i = 0; i < c; i++) {
+        cJSON* user = user_list[i].user;
+        cJSON* rank_field = cJSON_GetObjectItem(user, "rank");
+
+        cJSON_SetNumberValue(rank_field, i + 1);
+    }
+
+    char* new_data = cJSON_Print(root);
+    write_file("data/users.json", new_data);
+    
+    cJSON_Delete(root);
+    return TRUE;
+}
+
 void print_headers(WINDOW* w, char lb_titles[5][20], int size, int y, int x){
     wattron(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
     mvwprintw(w, y, x, "%s", lb_titles[0]);
@@ -30,6 +80,18 @@ void print_headers(WINDOW* w, char lb_titles[5][20], int size, int y, int x){
     wattroff(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
     wrefresh(w);
     refresh();
+}
+
+void print_users(WINDOW* w, User user, int height, int width, int y_start, int x_start, int max_users){
+    if(!grade_users()){
+        char* ms = "Not Any Users Yet ...";
+        wattron(w, COLOR_PAIR(TEXT_COLOR));
+        mvwprintw(w, (height - y_start)/2 + y_start/2, width/2 - strlen(ms)/2, "%s", ms);
+        wattroff(w, COLOR_PAIR(TEXT_COLOR));
+        wrefresh(w);
+    }
+
+
 }
 
 void show_leaderboard(User user){
@@ -48,7 +110,7 @@ void show_leaderboard(User user){
     print_title(lb_table, "LeaderBoard", 2, x);
     print_headers(lb_table, lb_titles, 5, y_start, x_start);
 
-    // print_users();
+    print_users(lb_table, user, height, width, y_start + 2, x_start + 2, 7);
     getch();
 }
 

@@ -660,25 +660,6 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
 }
 
 // Data
-void read_usernames(char** usernames, int number_of_users){
-    char* users_data = read_file("data/users.json");
-
-    cJSON* root = cJSON_Parse(users_data);
-    if(!root){
-        return;
-    }
-
-    cJSON* users = cJSON_GetObjectItem(root, "users");
-    
-    for(int i = 0; i < number_of_users; ++i){
-        cJSON* user = cJSON_GetArrayItem(users, i);
-        cJSON* username = cJSON_GetObjectItem(user, "username");
-        strcpy(usernames[i], username->valuestring);
-    }
-    cJSON_Delete(root);
-    free(users_data);
-}
-
 void update_user_pass(User t_user){
     char* users_data = read_file("data/users.json");
 
