@@ -204,6 +204,10 @@ void rand_ints(int* arr, int size, int a, int b, int ascending){
         }
     }
 }
+// Math Functions
+int min(int a, int b){
+    return (a < b) ? a : b;
+}
 
 // string functions
 bool is_upper(char c){

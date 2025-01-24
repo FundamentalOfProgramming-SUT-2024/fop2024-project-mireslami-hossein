@@ -32,12 +32,12 @@ int compare_users(const void* a, const void* b) {
     return userB->points - userA->points;
 }
 
-bool grade_users(){
+bool grade_users(UserData** users_sorted){
     char* users_data = read_file("data/users.json");
     
     cJSON* root = cJSON_Parse(users_data);
     free(users_data);
-    if(root == NULL){
+    if(!root){
         return FALSE;
     }
     int c = count_users();
@@ -62,11 +62,12 @@ bool grade_users(){
 
         cJSON_SetNumberValue(rank_field, i + 1);
     }
+    *users_sorted = user_list;
 
     char* new_data = cJSON_Print(root);
     write_file("data/users.json", new_data);
     
-    cJSON_Delete(root);
+    // cJSON_Delete(root);
     return TRUE;
 }
 
@@ -115,27 +116,22 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
     refresh();
 }
 
-void print_users(WINDOW* w, User user, int height, int width, int y_start, int x_start, int max_users){
-    if(!grade_users()){
+void print_users(WINDOW* w, User user, int height, int width, int size, int y_start, int x_start, int max_users){
+    UserData* users_sorted = (UserData*)malloc(sizeof(UserData*));
+
+    if(!grade_users(&users_sorted)){
         char* ms = "Not Any Users Yet ...";
         wattron(w, COLOR_PAIR(TEXT_COLOR));
         mvwprintw(w, (height - y_start)/2 + y_start/2, width/2 - strlen(ms)/2, "%s", ms);
         wattroff(w, COLOR_PAIR(TEXT_COLOR));
         wrefresh(w);
     } else{
-        char* users_data = read_file("data/users.json");
-    
-        cJSON* root = cJSON_Parse(users_data);
-        cJSON* users = cJSON_GetObjectItem(root, "users");
-
-        free(users_data);
-
         int c = count_users();
-        for (int i = 0; i < c; i++) {
+        for (int i = 0; i < min(size,c); i++) {
             int mode = 1;
 
-            cJSON* t_user = cJSON_GetArrayItem(users, i);
             User t_user_data;
+            cJSON* t_user = users_sorted[i].user;
             t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
             strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
             if(!user.is_guest && strcmp(t_user_data.username, user.username) == 0)
@@ -171,7 +167,7 @@ void show_leaderboard(User user){
     print_title(lb_table, "LeaderBoard", 2, x);
     print_headers(lb_table, lb_titles, y_start, x_start);
 
-    print_users(lb_table, user, height, width, y_start + 2, x_start + 2, 7);
+    print_users(lb_table, user, height, width, 6, y_start + 2, x_start + 2, 7);
     getch();
 }
 
