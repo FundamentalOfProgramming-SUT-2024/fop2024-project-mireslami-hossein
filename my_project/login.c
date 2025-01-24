@@ -632,6 +632,8 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
     print_messages(forgot_pass_win, pass_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
 
     get_forgot_new_password(forgot_pass_win, height, width, y_start + 6, x_start, user);
+    
+    curs_set(FALSE);
 
     selected = 0;
     while(pressed == 0){
@@ -642,14 +644,11 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
             exit(0);
         }
         else if(pressed == 1){
-            clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
             clear();
             delwin(forgot_pass_win);
             login_user(user);
         }
     }
-
-    
 }
 
 // Login Form Handeling
@@ -700,7 +699,8 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
 void get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
     int pass_ch;
     int index = 0;
-    
+    bool password_reset = false;
+
     clear_part(login_form, y, x, y, width - 2);
 
     wmove(login_form ,y, x);
@@ -711,15 +711,13 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
     print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
     while(1){
         pass_ch = wgetch(login_form);
-
-        clear_part(login_form, height-2, 1, height-2, width - 2);
-        if(index == 0){
+        
+        if(pass_ch == '\n' && index == 0 && !password_reset){
             print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
+            password_reset = true;
+            break;
         }
         if(pass_ch == '\n'){
-            if(index == 0){
-                password_forget_panel(height, width + 10, y, x, user);
-            }
             user->password[index] = '\0';
             char target_pass[MAX_PASSWORD + 1];
             get_user_detail_by_username(user->username, "password", target_pass);
@@ -750,7 +748,9 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
         index++;
     }
     clear_part(login_form, height-2, 1, height-2, width - 2);
-    wrefresh(login_form);
+    if(password_reset){
+        password_forget_panel(height, width + 5, y, x, user);
+    }
 }
 
 // Data
@@ -801,6 +801,10 @@ void save_user_data(User user){
     write_file("data/users.json", file_data);
 }
 
+void login_as_guest(User* user){
+    user->is_guest = true;
+}
+
 void login_user(User* user){
     int width = 40, height = 25;
     int y = LINES/2 - height/2;
@@ -827,6 +831,9 @@ void login_user(User* user){
     get_login_username(login_form, height, width, y_start, x_start, user->username);
     get_login_password(login_form, height, width, y_start + 2, x_start, user);
 
+    user->is_guest = FALSE;
+
+    curs_set(FALSE);
     selected = 0;
     while(pressed == 0){
         print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2);
@@ -837,11 +844,10 @@ void login_user(User* user){
         }
         else if(pressed == 1){
             // Open Game Page
+            break;
         }
     }
-    
-    print_error_message(login_form, height, width, y_start, x_start, "Login Successfully!!!");
-    getchar();
+    delwin(login_form);
 }
 
 void signup_user(User* user){
@@ -875,6 +881,8 @@ void signup_user(User* user){
 
     get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
     
+    user->is_guest = FALSE;
+
     selected = 0;
     while(pressed == 0){
         print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2);
@@ -884,6 +892,7 @@ void signup_user(User* user){
             if(selected == 0)
                 generate_random_pass(sign_form, height, width, y_start+2, x_start, user->password);
             else if(selected == 1){
+                // Open Game Page
                 save_user_data(*user);
                 break;
             }
@@ -896,7 +905,6 @@ void signup_user(User* user){
         wrefresh(sign_form);
     }
 
-    int c = getch();
     delwin(sign_form);
 }
 
@@ -909,7 +917,7 @@ void open_form(int selected, User* user){
     } else if(selected == 1){
         login_user(user);
     } else if(selected == 2){
-        // login_as_guest(user);
+        login_as_guest(user);
     }
     refresh();
 }

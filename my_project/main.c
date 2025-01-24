@@ -12,10 +12,6 @@ gcc main.c -o game.out -lncurses -lcjson && ./game.out
 #include "basic_loads.h"
 #include "login.c"
 
-typedef struct
-{
-    int x,y;
-} Loc;
 
 
 int main(){
