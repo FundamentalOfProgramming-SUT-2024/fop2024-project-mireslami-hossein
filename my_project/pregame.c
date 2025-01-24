@@ -17,8 +17,13 @@ char pregame_guest_options[4][50] = {
 
 void show_leaderboard(User user){
     clear();
-    // print_title();
+    int height = 36, width = 75;
+    int y_w = LINES/2 - height/2;
+    int x_w = COLS/2 - width/2;
+    WINDOW* menu = newwin(height , width,y_w,x_w);
+    print_title();
 }
+
 
 void load_pregame_page(User* user){
     clear();
