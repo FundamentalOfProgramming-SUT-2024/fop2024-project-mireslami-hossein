@@ -439,7 +439,7 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
 }
 
 // Login Validation
-void get_user_pass(char* target_username, char* target_pass){
+void get_user_detail_by_username(char* target_username, char* data, char* value){
     char* users_data = read_file("data/users.json");
     cJSON* root = cJSON_Parse(users_data);
     if(!root){
@@ -452,14 +452,112 @@ void get_user_pass(char* target_username, char* target_pass){
         cJSON* user = cJSON_GetArrayItem(users, i);
         cJSON* username = cJSON_GetObjectItem(user, "username");
         if(strcmp(username->valuestring, target_username) == 0){
-            cJSON* pass = cJSON_GetObjectItem(user, "password");
-            strcpy(target_pass, pass->valuestring);
+            cJSON* detail = cJSON_GetObjectItem(user, data);
+            strcpy(value, detail->valuestring);
             cJSON_Delete(root);
             return;
         }
     }
 }
 
+// Login Pass Forgotten
+void get_forgot_email(WINDOW* forgot_pass_win, int height, int width, int y, int x, User* user){
+    int email_ch;
+    int index = 0;
+
+    wmove(forgot_pass_win, y, x);
+    curs_set(TRUE);
+    keypad(forgot_pass_win, TRUE);
+    noecho();
+
+    while(1){
+        email_ch =  wgetch(forgot_pass_win);
+
+        if(email_ch == '\n'){
+            user->email[index] = '\0';
+            char target_email[MAX_EMAIL + 1];
+            get_user_detail_by_username(user->username, "email", target_email);
+            if(strcmp(target_email, user->email)){
+                print_error_message(forgot_pass_win, height, width, y, x+index, "Email isn't correct!");
+                continue;
+            } else{
+                break;
+            }
+        } else if(email_ch == KEY_BACKSPACE || email_ch == 127) {
+            if (index > 0) {
+                index--;
+                user->email[index] = '\0';
+                mvwaddch(forgot_pass_win, y, x+index, ' ');
+                wmove(forgot_pass_win, y, x+index);
+            }
+            continue;
+        } else if(email_ch < 32 || email_ch > 126) {
+            continue;
+        }
+        if(index >= MAX_EMAIL){
+            continue;
+        }
+        mvwaddch(forgot_pass_win, y, x+index, email_ch);
+        user->email[index] = email_ch;
+        index++;
+    }
+
+    user->email[index] = '\0';
+    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+    wrefresh(forgot_pass_win);
+}
+
+void login_user(User* user);
+void password_forget_panel(int height, int width, int y_pass, int x_pass, User* user){
+    clear();
+    int y = LINES/2 - height/2;
+    int x = COLS/2 - width/2;
+    WINDOW* forgot_pass_win = newwin(height, width, y, x);
+    box(forgot_pass_win, 0, 0);
+    refresh();
+
+    char title[20] = "Password Recovery";
+    start_color();
+    wattron(forgot_pass_win, COLOR_PAIR(HEADER_COLOR) | A_BOLD);
+    mvwprintw(forgot_pass_win,3,width/2 - strlen(title)/2, "%s",title);
+    wattroff(forgot_pass_win, COLOR_PAIR(HEADER_COLOR)| A_BOLD);
+
+    int selected = -1;
+    int pressed = 0;
+    int y_start = 6;
+    int x_start = 15;
+
+    print_messages(forgot_pass_win, pass_form_labels, 3, y_start, x_start, 'r', LABEL_COLOR);
+    print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2);
+
+    mvwprintw(forgot_pass_win, y_start, x_start, "%s", user->username);
+    wrefresh(forgot_pass_win);
+
+    get_forgot_email(forgot_pass_win, height, width, y_start + 2, x_start, user);
+
+    get_forgot_checker_word(forgot_pass_win, height, width, y_start + 4, x_start, user);
+
+    // print_messages(forgot_pass_win, pass_form_labels, 5, y_start, x_start, 'r', LABEL_COLOR);
+
+    // get_forgot_new_password();
+
+    selected = 0;
+    while(pressed == 0){
+        print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2);
+        handle_selected_btn(&selected, 1, &pressed);
+        if(pressed == -1){
+            endwin();
+            exit(0);
+        }
+        else if(pressed == 1){
+            login_user(user);
+        }
+    }
+
+    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
+    wrefresh(forgot_pass_win);
+    delwin(forgot_pass_win);
+}
 
 // Login Form Handeling
 void get_login_username(WINDOW* login_form, int height, int width, int y, int x, char* username){
@@ -506,20 +604,6 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
     clear_part(login_form, height-2, 1, height-2, width - 2);
 }
 
-void password_forget_panel(int height, int width, int y_pass, int x_pass, User* user){
-    clear();
-    int y = LINES/2 - height/2;
-    int x = COLS/2 - width/2;
-    WINDOW* forgot_pass_win = newwin(height, width, y, x);
-    box(forgot_pass_win, 0, 0);
-    refresh();
-
-    // forget panel
-
-    clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
-    wrefresh(forgot_pass_win);
-}
-
 void get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
     int pass_ch;
     int index = 0;
@@ -531,13 +615,13 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
     keypad(login_form, TRUE);
     noecho();
 
-    print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER !");
+    print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
     while(1){
         pass_ch = wgetch(login_form);
 
         clear_part(login_form, height-2, 1, height-2, width - 2);
         if(index == 0){
-            print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER !");
+            print_error_message(login_form, height, width, y, x+index, "If you forgot your pass press ENTER!");
         }
         if(pass_ch == '\n'){
             if(index == 0){
@@ -545,12 +629,11 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
             }
             user->password[index] = '\0';
             char target_pass[MAX_PASSWORD + 1];
-            get_user_pass(user->username, target_pass);
+            get_user_detail_by_username(user->username, "password", target_pass);
             if(strcmp(target_pass, user->password)){
                 print_error_message(login_form, height, width, y, x+index, "Password isn't correct!");
                 continue;
             } else{
-                
                 break;
             }
         } else if(pass_ch == KEY_BACKSPACE || pass_ch == 127) {
