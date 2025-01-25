@@ -1,7 +1,7 @@
 /*
 To Run The GAME compile it by entering this command in terminal:
 
-gcc main.c -o game.out -lncurses -lcjson && ./game.out
+gcc main.c -o game.out -lncurses -lcjson -lm && ./game.out
 
 */ 
 
