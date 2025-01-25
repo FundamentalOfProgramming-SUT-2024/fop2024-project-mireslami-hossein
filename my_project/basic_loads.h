@@ -355,7 +355,7 @@ void game_initalize(){
     add_color_rgb(CUSTOM_GREEN, 93, 255, 101);
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
-    add_color_rgb(CUSTOM_YELLOW, 245, 255, 155);
+    add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
