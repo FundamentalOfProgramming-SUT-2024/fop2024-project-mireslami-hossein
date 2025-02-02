@@ -34,7 +34,10 @@ enum ColorPairs {
     LABEL_COLOR,
     TEXT_COLOR,
     BTN_DEFAULT_2,
-    BTN_SELECTED_2
+    BTN_SELECTED_2,
+    WHITE_TEXT,
+    GREEN_TEXT,
+    CYAN_TEXT
 };
 
 // Structs
@@ -170,7 +173,8 @@ void handle_selected_btn(int* selected, int size, int* flag){
         break;
     
     // on press Enter
-    case 10: case 13:
+    
+    case '\n': case 13:
         *flag = 1;
         break;
     
@@ -378,6 +382,10 @@ void game_initalize(){
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
     init_pair(BTN_DEFAULT_2, CUSTOM_GREEN, COLOR_BLACK);
     init_pair(BTN_SELECTED_2, COLOR_BLACK , CUSTOM_GREEN);
+    
+    init_pair(WHITE_TEXT, COLOR_WHITE , COLOR_BLACK);
+    init_pair(GREEN_TEXT, COLOR_GREEN , COLOR_BLACK);
+    init_pair(CYAN_TEXT, COLOR_CYAN , COLOR_BLACK);
 
     srand(time(NULL));
 }

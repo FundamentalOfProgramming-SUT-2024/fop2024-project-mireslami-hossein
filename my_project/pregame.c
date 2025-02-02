@@ -26,7 +26,7 @@ char player_colors[3][20] = {
     "White", "Green", "Cyan"
 };
 int player_color_ids[3] = {
-    COLOR_WHITE, CUSTOM_GREEN, CUSTOM_CYAN
+    WHITE_TEXT, GREEN_TEXT, CYAN_TEXT
 };
 
 // Leaderboard
@@ -106,9 +106,11 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
 
     mvwprintw(w, y, x_start, "%d", user.rank);
     mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
-    mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.points);
-    mvwprintw(w, y, x_start + 45 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
-    mvwprintw(w, y, x_start + 58, "%ld", user.experience);
+    mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.golds);
+    mvwprintw(w, y, x_start + 45 - (int)log10(user.points + 1)/2, "%d", user.points);
+    mvwprintw(w, y, x_start + 58 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
+    mvwprintw(w, y, x_start + 73, "%ld", user.experience);
+    
 
     switch (mode) {
         case 2:
@@ -193,10 +195,28 @@ void show_leaderboard(User user){
 
 }
 
+void print_colors(WINDOW* w, int width, int height, int y, int x, int color_num, int selected){
+    
+    for(int i = 0; i < color_num; i++){
+        wattron(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
+        if(selected == i){
+            wattron(w, A_REVERSE);
+            mvwprintw(w, y, x, "%s", player_colors[i]);
+            wattroff(w, A_REVERSE | A_BOLD);
+        } else{
+            mvwprintw(w, y, x, "%s", player_colors[i]);
+            wattroff(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
+        }
+
+        x += (strlen(player_colors[i]) + 5);
+    }
+    wrefresh(w);
+    refresh();
+}
 
 void show_setting(Player* player, Game* g){
     clear();
-    int height = 18, width = 35;
+    int height = 18, width = 70;
     int y_w = LINES/2 - height/2;
     int x_w = COLS/2 - width/2;
     WINDOW* set_w = newwin(height , width,y_w,x_w);
@@ -208,8 +228,26 @@ void show_setting(Player* player, Game* g){
 
     int start_y = 6, start_x = 18;
     print_messages(set_w, setting_lebels, 2, start_y, start_x, 'r', LABEL_COLOR, 4);
-    get_player_color(set_w, width, height, start_y, start_x);
-
+    int selected = 0;
+    int pressed = 0;
+    int color_num = 3;
+    while(pressed == 0){
+        print_colors(set_w, width, height, start_y + 2, start_x + 10, color_num, selected);
+        int ch = getch();
+        if(ch == KEY_LEFT){
+            if(selected > 0) --selected;
+        }else if(ch == KEY_RIGHT){
+            if(selected < color_num-1) ++selected;
+        } else if(ch == 'q' || ch == 'Q'){
+            pressed = -1;
+        } 
+        else if(ch == '\n') pressed = 1;
+    }
+    if(pressed == 1){
+        player->color_id = player_color_ids[selected];
+    } else if(pressed == -1){
+        // Go Back
+    }
     getch();
 }
 
