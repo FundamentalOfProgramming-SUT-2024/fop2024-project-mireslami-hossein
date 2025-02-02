@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <ncurses.h>
 #include "cjson/cJSON.h"
 #include <regex.h>
@@ -85,31 +86,27 @@ void print_headers(WINDOW* w, char lb_titles[5][20], int y, int x){
 // mode: 1:default 2:User 3:Top Users
 void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
     switch (mode) {
-    case 1:
-        mvwprintw(w, y, x_start, "%d", user.rank);
-        mvwprintw(w, y, x_start + 12, "%s", user.username);
-        mvwprintw(w, y, x_start + 28, "%d", user.points);
-        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
-        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
-        break;
-    case 2:
-        wattron(w, A_BOLD);
-        mvwprintw(w, y, x_start, "%d", user.rank);
-        mvwprintw(w, y, x_start + 12, "%s", user.username);
-        mvwprintw(w, y, x_start + 28, "%d", user.points);
-        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
-        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
-        wattroff(w, A_BOLD);
-        break;
-    case 3:
-        wattron(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
-        mvwprintw(w, y, x_start, "%d", user.rank);
-        mvwprintw(w, y, x_start + 12, "Legend %s", user.username);
-        mvwprintw(w, y, x_start + 28, "%d", user.points);
-        mvwprintw(w, y, x_start + 42, "%d", user.ended_games);
-        mvwprintw(w, y, x_start + 56, "%ld", user.experience);
-        wattroff(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
-        break;
+        case 2:
+            wattron(w, A_BOLD);
+            break;
+        case 3:
+            wattron(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
+            break;
+    }
+
+    mvwprintw(w, y, x_start, "%d", user.rank);
+    mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
+    mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.points);
+    mvwprintw(w, y, x_start + 45 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
+    mvwprintw(w, y, x_start + 58, "%ld", user.experience);
+
+    switch (mode) {
+        case 2:
+            wattroff(w, A_BOLD);
+            break;
+        case 3:
+            wattroff(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
+            break;
     }
     
     wrefresh(w);

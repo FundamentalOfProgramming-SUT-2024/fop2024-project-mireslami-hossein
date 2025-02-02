@@ -22,11 +22,11 @@ int main(){
     noecho();
     curs_set(FALSE);
 
-    // if(!has_colors()){
-    //     endwin();
-    //     printf("Sorry! Your Terminal Doesn't support colors!\n");
-    //     return 0;
-    // }
+    if(!has_colors()){
+        endwin();
+        printf("Sorry! Your Terminal Doesn't support colors!\n");
+        return 0;
+    }
 
     game_initalize();
     User user;

@@ -14,29 +14,33 @@
 #define MAX_EMAIL 25
 
 // New COLORS
-#define COLOR_PURPLE 10
-#define CUSTOM_RED 11
-#define CUSTOM_CYAN 12
-#define CUSTOM_GREEN 13
-#define CUSTOM_ORANGE 14
-#define CUSTOM_YELLOW 15
+enum CustomColors {
+    COLOR_PURPLE = 30,
+    CUSTOM_RED,
+    CUSTOM_CYAN,
+    CUSTOM_GREEN,
+    CUSTOM_ORANGE,
+    CUSTOM_YELLOW
+};
+
 
 // New PAIRS
-#define BG_LOGIN 0
-#define MESSAGE_COLOR 1
-#define BTN_DEFAULT 2
-#define BTN_SELECTED 3
-#define HEADER_COLOR 4
-#define LABEL_COLOR 5
-#define TEXT_COLOR 6
-
-#define BTN_DEFAULT_2 7
-#define BTN_SELECTED_2 8
+enum ColorPairs {
+    BG_LOGIN = 0,
+    MESSAGE_COLOR,
+    BTN_DEFAULT,
+    BTN_SELECTED,
+    HEADER_COLOR,
+    LABEL_COLOR,
+    TEXT_COLOR,
+    BTN_DEFAULT_2,
+    BTN_SELECTED_2
+};
 
 // Structs
 typedef struct{
-
-} Game;
+    int color_id;
+} Player;
 
 typedef struct{
     int x,y;
@@ -61,6 +65,14 @@ typedef struct {
 
 } User;
 
+typedef struct{
+    int hardness;
+
+    Player* player;
+    User* user;
+} Game;
+
+
 // graphics
 void add_color_rgb(int id, int r, int g, int b){
     start_color();
@@ -83,26 +95,26 @@ void print_title(WINDOW* w, char* title, int y, int x){
     wrefresh(w);
 }
 
-void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id){
+void print_messages(WINDOW* w, char ms[][50], int size, int y, int x, char type, int color_id, int step){
     wattron(w, COLOR_PAIR(color_id));
     if(type == 'c'){
         for(int i = 0; i < size; i++){
             int ms_len = strlen(ms[i]);
             int x_m = x - ms_len/2;
-            int y_m = y + i*2;
+            int y_m = y + i*step;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
     } else if(type == 'r'){
         for(int i = 0; i < size; i++){
             int ms_len = strlen(ms[i]);
             int x_m = x - ms_len;
-            int y_m = y + i*2;
+            int y_m = y + i*step;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
     } else if(type == 'l'){
         for(int i = 0; i < size; i++){
             int x_m = x;
-            int y_m = y + i*2;
+            int y_m = y + i*step;
             mvwprintw(w,y_m, x_m, "%s", ms[i]);
         }
     }
@@ -355,7 +367,7 @@ void game_initalize(){
     add_color_rgb(CUSTOM_GREEN, 93, 255, 101);
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
-    add_color_rgb(CUSTOM_YELLOW, 245, 255, 155);
+    add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
@@ -366,6 +378,7 @@ void game_initalize(){
     init_pair(LABEL_COLOR, CUSTOM_ORANGE, COLOR_BLACK);
     init_pair(BTN_DEFAULT_2, CUSTOM_GREEN, COLOR_BLACK);
     init_pair(BTN_SELECTED_2, COLOR_BLACK , CUSTOM_GREEN);
+
     srand(time(NULL));
 }
 
