@@ -525,7 +525,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
     int y_start = 6;
     int x_start = 17;
 
-    print_messages(forgot_pass_win, pass_form_labels, 3, y_start, x_start, 'r', LABEL_COLOR);
+    print_messages(forgot_pass_win, pass_form_labels, 3, y_start, x_start, 'r', LABEL_COLOR, 2);
     print_buttons(forgot_pass_win, login_form_buttons, 1, selected, y_start + 12, width/2, 1);
 
     mvwprintw(forgot_pass_win, y_start, x_start, "%s", user->username);
@@ -535,7 +535,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
 
     get_forgot_checker_word(forgot_pass_win, height, width, y_start + 4, x_start, user);
 
-    print_messages(forgot_pass_win, pass_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
+    print_messages(forgot_pass_win, pass_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR, 2);
 
     get_forgot_new_password(forgot_pass_win, height, width, y_start + 6, x_start, user);
     
@@ -705,7 +705,7 @@ void login_user(User* user){
     int selected = -1;
     int pressed = 0;
 
-    print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
+    print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR, 2);
     print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2, 1);
 
     get_login_username(login_form, height, width, y_start, x_start, user->username);
@@ -750,7 +750,7 @@ void signup_user(User* user){
     int selected = -1;
     int pressed = 0;
     print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2, 1);
-    print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR);
+    print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR, 2);
 
 
     get_sign_username(sign_form, height, width, y_start, x_start, user->username);
@@ -823,7 +823,7 @@ void load_first_page(User* user){
 
     
     while(!exit_flag){
-        print_messages(menu, entry_messages, message_num, 2, width/2, 'c', HEADER_COLOR);
+        print_messages(menu, entry_messages, message_num, 2, width/2, 'c', HEADER_COLOR, 2);
         print_buttons(menu, entry_options, btn_nums, selected_btn, 9, width/2, 1);
         
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);
