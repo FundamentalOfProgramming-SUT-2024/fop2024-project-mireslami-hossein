@@ -107,9 +107,8 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
     mvwprintw(w, y, x_start, "%d", user.rank);
     mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
     mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.points);
-    mvwprintw(w, y, x_start + 45 - (int)log10(user.golds + 1)/2, "%d", user.golds);
-    mvwprintw(w, y, x_start + 59 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
-    mvwprintw(w, y, x_start + 73, "%ld", user.experience);
+    mvwprintw(w, y, x_start + 45 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
+    mvwprintw(w, y, x_start + 58, "%ld", user.experience);
 
     switch (mode) {
         case 2:
