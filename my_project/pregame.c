@@ -214,6 +214,40 @@ void print_colors(WINDOW* w, int width, int height, int y, int x, int color_num,
     refresh();
 }
 
+void get_game_hardness(Game* g, WINDOW* set_w) {
+    int hardness = (g->hardness >= 0 && g->hardness <= 10) ? g->hardness : 5;
+    int ch;
+    int confirmed = 0;
+
+    int y_hard = 12, x_hard = 0;
+    keypad(set_w, TRUE);
+    
+    while (confirmed == 0) {
+
+        for (int i = y_hard; i < y_hard + 3; i++) {
+            mvwprintw(set_w, i, 1, "%*s", 68, " ");
+        }
+        mvwprintw(set_w, y_hard, (70 - strlen("Game Hardness (0-10):"))/2, "Game Hardness (0-10):");
+        mvwprintw(set_w, y_hard+1, (70 - 2)/2, "%d", hardness);
+        mvwprintw(set_w, y_hard+2, (70 - strlen("Up/Down: adjust, Enter: Confirm"))/2, "Up/Down: adjust, Enter: Confirm");
+        wrefresh(set_w);
+        
+        ch = wgetch(set_w);
+        if (ch == KEY_UP) {
+            if (hardness < 10)
+                hardness++;
+        } else if (ch == KEY_DOWN) {
+            if (hardness > 0)
+                hardness--;
+        } else if (ch == '\n') {
+            confirmed = 1;
+        }
+    }
+    
+    if (confirmed == 1)
+        g->hardness = hardness;
+}
+
 void show_setting(Player* player, Game* g){
     clear();
     int height = 18, width = 70;
@@ -245,9 +279,11 @@ void show_setting(Player* player, Game* g){
     }
     if(pressed == 1){
         player->color_id = player_color_ids[selected];
+        get_game_hardness(g, set_w);
     } else if(pressed == -1){
         // Go Back
     }
+
     getch();
 }
 
