@@ -1,7 +1,7 @@
 /*
 To Run The GAME compile it by entering this command in terminal:
 
-gcc main.c -o game.out -lncurses -lcjson && ./game.out
+gcc main.c -o game.out -lncurses -lcjson -lm && ./game.out
 
 */ 
 
@@ -27,13 +27,20 @@ int main(){
         printf("Sorry! Your Terminal Doesn't support colors!\n");
         return 0;
     }
+    
+    Game game;
 
-    game_initalize();
     User user;
     reset_user_data(&user);
 
+    game.user = &user;
+    Player player;
+    game.player = &player;
+    
+    game_initalize();
+    
     load_first_page(&user);
-    load_pregame_page(&user);
+    load_pregame_page(&user, &player, &game);
     
     endwin();
 }
