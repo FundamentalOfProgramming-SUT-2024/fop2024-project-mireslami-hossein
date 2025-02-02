@@ -16,8 +16,17 @@ char pregame_guest_options[4][50] = {
     "New Game", "Leaderboard", "Settings" , "Profile"
 };
 
-char lb_titles[5][20] = {
-    "Rank", "Username", "Total Score", "Total Games", "Experience"
+char lb_titles[6][20] = {
+    "Rank", "Username", "Total Score","Total Golds", "Total Games", "Experience"
+};
+char setting_lebels[2][50] = {
+    "Player Color: ", "Game Hardness: "
+};
+char player_colors[3][20] = {
+    "White", "Green", "Cyan"
+};
+int player_color_ids[3] = {
+    COLOR_WHITE, CUSTOM_GREEN, CUSTOM_CYAN
 };
 
 // Leaderboard
@@ -72,13 +81,14 @@ bool grade_users(UserData** users_sorted){
     return TRUE;
 }
 
-void print_headers(WINDOW* w, char lb_titles[5][20], int y, int x){
+void print_headers(WINDOW* w, char lb_titles[6][20], int y, int x){
     wattron(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
     mvwprintw(w, y, x, "%s", lb_titles[0]);
     mvwprintw(w, y, x + 12, "%s", lb_titles[1]);
     mvwprintw(w, y, x + 28, "%s", lb_titles[2]);
     mvwprintw(w, y, x + 42, "%s", lb_titles[3]);
     mvwprintw(w, y, x + 56, "%s", lb_titles[4]);
+    mvwprintw(w, y, x + 70, "%s", lb_titles[5]);
     wattroff(w, A_BOLD | COLOR_PAIR(LABEL_COLOR));
     wrefresh(w);
     refresh();
@@ -97,8 +107,9 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
     mvwprintw(w, y, x_start, "%d", user.rank);
     mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
     mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.points);
-    mvwprintw(w, y, x_start + 45 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
-    mvwprintw(w, y, x_start + 58, "%ld", user.experience);
+    mvwprintw(w, y, x_start + 45 - (int)log10(user.golds + 1)/2, "%d", user.golds);
+    mvwprintw(w, y, x_start + 59 - (int)log10(user.ended_games + 1)/2, "%d", user.ended_games);
+    mvwprintw(w, y, x_start + 73, "%ld", user.experience);
 
     switch (mode) {
         case 2:
@@ -113,8 +124,10 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
     refresh();
 }
 
-void print_users(WINDOW* w, User user, int height, int width, int size, int y_start, int x_start, int max_users){
-    UserData* users_sorted = (UserData*)malloc(sizeof(UserData*));
+void print_users(WINDOW* w, User user, int height, int width, int start_i, int max, int y_start, int x_start){
+    clear_part(w, y_start, x_start, y_start + 12 , width - 2);
+
+    UserData* users_sorted;
 
     if(!grade_users(&users_sorted)){
         char* ms = "Not Any Users Yet ...";
@@ -124,10 +137,12 @@ void print_users(WINDOW* w, User user, int height, int width, int size, int y_st
         wrefresh(w);
     } else{
         int c = count_users();
-        for (int i = 0; i < min(size,c); i++) {
+        for (int i = start_i; i < min(max,c) + start_i; i++) {
             int mode = 1;
 
             User t_user_data;
+            reset_user_data(&t_user_data);
+
             cJSON* t_user = users_sorted[i].user;
             t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
             strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
@@ -135,13 +150,14 @@ void print_users(WINDOW* w, User user, int height, int width, int size, int y_st
                 mode = 2;
 
             t_user_data.points = cJSON_GetObjectItem(t_user, "points")->valueint;
+            t_user_data.golds = cJSON_GetObjectItem(t_user, "golds")->valueint;
             t_user_data.ended_games = cJSON_GetObjectItem(t_user, "ended_games")->valueint;
             t_user_data.experience = cJSON_GetObjectItem(t_user, "experience")->valueint;
             
             if(i <= 2)
                 mode = 3;
             
-            print_userdata(w, t_user_data, y_start + 2*i, x_start, mode);
+            print_userdata(w, t_user_data, y_start + 2*(i - start_i), x_start, mode);
         }
     }
 
@@ -150,7 +166,7 @@ void print_users(WINDOW* w, User user, int height, int width, int size, int y_st
 
 void show_leaderboard(User user){
     clear();
-    int height = 22, width = 75;
+    int height = 22, width = 90;
     int y_w = LINES/2 - height/2;
     int x_w = COLS/2 - width/2;
     WINDOW* lb_table = newwin(height , width,y_w,x_w);
@@ -164,12 +180,41 @@ void show_leaderboard(User user){
     print_title(lb_table, "LeaderBoard", 2, x);
     print_headers(lb_table, lb_titles, y_start, x_start);
 
-    print_users(lb_table, user, height, width, 6, y_start + 2, x_start + 2, 7);
-    getch();
+    keypad(lb_table, TRUE);
+    int ch, start_index = 0, num_of_users = count_users(), max = 6;
+    while(1){
+        print_users(lb_table, user, height, width, start_index, max, y_start + 2, x_start + 2);
+        ch = getch();
+        if(ch == KEY_UP){
+            if(start_index > 0) --start_index;
+        }else if(ch == KEY_DOWN){
+            if(start_index < num_of_users - max) ++start_index;
+        } else if(ch == 'q' || ch == 'Q') break;
+    }
+
 }
 
 
-void load_pregame_page(User* user){
+void show_setting(Player* player, Game* g){
+    clear();
+    int height = 18, width = 35;
+    int y_w = LINES/2 - height/2;
+    int x_w = COLS/2 - width/2;
+    WINDOW* set_w = newwin(height , width,y_w,x_w);
+    wrefresh(set_w);
+    box(set_w, 0, 0);
+    refresh();
+
+    print_title(set_w, "Setting", 2, width/2);
+
+    int start_y = 6, start_x = 18;
+    print_messages(set_w, setting_lebels, 2, start_y, start_x, 'r', LABEL_COLOR, 4);
+    get_player_color(set_w, width, height, start_y, start_x);
+
+    getch();
+}
+
+void load_pregame_page(User* user, Player* player, Game* g){
     clear();
 
     start_color();
@@ -187,7 +232,7 @@ void load_pregame_page(User* user){
 
     print_title(menu, "Game Menu", 2, width/2);
     // BACK hint
-    char ms[2][50] = {"Hint:", "Press ESC anywhere to go back!"};
+    char ms[2][50] = {"Hint:", "Press Q anywhere to go back!"};
     int x = width/2;
     int y = 6;
     
@@ -198,24 +243,23 @@ void load_pregame_page(User* user){
     mvwprintw(menu, y-2, 9,"%s", ms[1]);
     wattroff(menu, COLOR_PAIR(TEXT_COLOR));
     wrefresh(menu);
- 
     if(user->is_guest){
         while(!pressed){
             print_buttons(menu, pregame_guest_options, 4, selected, y, x, 2);
             handle_selected_btn(&selected, 4, &pressed);
-        }
-        if(selected == 1){
-            show_leaderboard(*user);
         }
     } else{
         while(!pressed){
             print_buttons(menu, pregame_user_options, 5, selected, y, x, 2);
             handle_selected_btn(&selected, 5, &pressed);
         }
-        if(selected == 2){
-            show_leaderboard(*user);
-        }
     }
     
+    if(selected == 2 - user->is_guest){
+        show_leaderboard(*user);
+    }else if(selected == 3 - user->is_guest){
+        show_setting(player, g);
+    }
+
     delwin(menu);
 }
