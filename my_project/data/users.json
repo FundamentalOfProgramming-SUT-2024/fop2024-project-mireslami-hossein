@@ -1,81 +1,52 @@
 {
-	"users_number":	7,
+	"users_number":	4,
 	"users":	[{
 			"username":	"a1",
 			"password":	"Mire809",
 			"email":	"m@g.c",
 			"checker_word":	"mir",
-			"rank":	4,
-			"points":	60,
+			"rank":	1,
+			"points":	0,
 			"golds":	0,
 			"ended_games":	0,
 			"lastgame_id":	-1,
-			"experience":	0
+			"experience":	0,
+			"color_id":	11
 		}, {
 			"username":	"a2",
 			"password":	"Mire809",
 			"email":	"m@g.c",
 			"checker_word":	"mir",
-			"rank":	7,
+			"rank":	1,
 			"points":	0,
 			"golds":	0,
 			"ended_games":	0,
 			"lastgame_id":	-1,
-			"experience":	0
+			"experience":	0,
+			"color_id":	10
 		}, {
 			"username":	"a3",
 			"password":	"Mire809",
 			"email":	"m@g.c",
 			"checker_word":	"mir",
-			"rank":	5,
-			"points":	30,
+			"rank":	1,
+			"points":	0,
 			"golds":	0,
 			"ended_games":	0,
 			"lastgame_id":	-1,
-			"experience":	0
+			"experience":	0,
+			"color_id":	9
 		}, {
 			"username":	"a4",
 			"password":	"Mire809",
 			"email":	"m@g.c",
 			"checker_word":	"mir",
-			"rank":	6,
-			"points":	20,
-			"golds":	0,
-			"ended_games":	0,
-			"lastgame_id":	-1,
-			"experience":	0
-		}, {
-			"username":	"a5",
-			"password":	"Mire809",
-			"email":	"m@g.c",
-			"checker_word":	"mir",
-			"rank":	3,
-			"points":	100,
-			"golds":	0,
-			"ended_games":	0,
-			"lastgame_id":	-1,
-			"experience":	0
-		}, {
-			"username":	"a6",
-			"password":	"Mire809",
-			"email":	"m@g.c",
-			"checker_word":	"mir",
 			"rank":	1,
-			"points":	1500,
+			"points":	0,
 			"golds":	0,
 			"ended_games":	0,
 			"lastgame_id":	-1,
-			"experience":	0
-		}, {
-			"username":	"a7",
-			"password":	"Mire809",
-			"email":	"m@g.c",
-			"checker_word":	"mir",
-			"rank":	2,
-			"points":	120,
-			"golds":	0,
-			"ended_games":	0,
-			"lastgame_id":	-1,
-			"experience":	0
+			"experience":	0,
+			"color_id":	9
 		}]
 }

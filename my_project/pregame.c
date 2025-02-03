@@ -267,6 +267,17 @@ void show_setting(Game* g){
     int start_y = 6, start_x = 18;
     print_messages(set_w, setting_lebels, 2, start_y, start_x, 'r', LABEL_COLOR, 4);
     int selected = 0;
+    switch(g->user->color_id){
+        case WHITE_TEXT:
+            selected = 0;
+            break;
+        case GREEN_TEXT:
+            selected = 1;
+            break;
+        case CYAN_TEXT:
+            selected = 2;
+            break;
+    }
     int pressed = 0;
     int color_num = 3;
     while(pressed == 0){
@@ -283,6 +294,7 @@ void show_setting(Game* g){
     }
     if(pressed == 1){
         g->user->color_id = player_color_ids[selected];
+        update_user_int_data(*(g->user), "color_id", g->user->color_id);
         get_game_hardness(g, set_w);
     } else if(pressed == -1){
         // Go Back

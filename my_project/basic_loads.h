@@ -289,6 +289,27 @@ void read_usernames(char** usernames, int number_of_users){
 
 
 // User
+void update_user_int_data(User t_user, char* detail, int value){
+    char* users_data = read_file("data/users.json");
+
+    cJSON* root = cJSON_Parse(users_data);
+    cJSON* users = cJSON_GetObjectItem(root, "users");
+    cJSON* user_number = cJSON_GetObjectItem(root, "users_number");
+    for(int i = 0; i < user_number->valueint; i++){
+        cJSON* user = cJSON_GetArrayItem(users, i);
+        cJSON* username = cJSON_GetObjectItem(user, "username");
+
+        if(strcmp(username->valuestring, t_user.username) == 0){
+            cJSON* detail_ob = cJSON_GetObjectItem(user, detail);
+            cJSON_SetIntValue(detail_ob, value);
+            break;
+        }
+    }
+
+    char* file_data = cJSON_Print(root);
+    write_file("data/users.json", file_data);
+}
+
 void reset_user_data(User* user){
     user->username = (char *)malloc((MAX_USERNAME + 5) * sizeof(char));
     user->password = (char *)malloc((MAX_PASSWORD + 5) * sizeof(char));
@@ -302,6 +323,8 @@ void reset_user_data(User* user){
 
     user->last_game_id = -1;
     user->experience = 0;
+
+    user->color_id = WHITE_TEXT;
 }
 
 void get_user_detail_by_username(char* target_username, char* data, char* value){
@@ -354,6 +377,8 @@ void save_user_data(User user){
     
     cJSON_AddItemToObject(user_data, "lastgame_id", cJSON_CreateNumber(user.last_game_id));
     cJSON_AddItemToObject(user_data, "experience", cJSON_CreateNumber(user.experience));
+
+    cJSON_AddItemToObject(user_data, "color_id", cJSON_CreateNumber(user.color_id));
 
     cJSON_AddItemToArray(users, user_data);
 
