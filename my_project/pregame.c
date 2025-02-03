@@ -252,7 +252,7 @@ void get_game_hardness(Game* g, WINDOW* set_w) {
         g->hardness = hardness;
 }
 
-void show_setting(Player* player, Game* g){
+void show_setting(Game* g){
     clear();
     int height = 18, width = 70;
     int y_w = LINES/2 - height/2;
@@ -282,7 +282,7 @@ void show_setting(Player* player, Game* g){
         else if(ch == '\n') pressed = 1;
     }
     if(pressed == 1){
-        player->color_id = player_color_ids[selected];
+        g->user->color_id = player_color_ids[selected];
         get_game_hardness(g, set_w);
     } else if(pressed == -1){
         // Go Back
@@ -291,7 +291,7 @@ void show_setting(Player* player, Game* g){
     getch();
 }
 
-void load_pregame_page(User* user, Player* player, Game* g){
+void load_pregame_page(Game* g){
     clear();
 
     start_color();
@@ -320,7 +320,7 @@ void load_pregame_page(User* user, Player* player, Game* g){
     mvwprintw(menu, y-2, 9,"%s", ms[1]);
     wattroff(menu, COLOR_PAIR(TEXT_COLOR));
     wrefresh(menu);
-    if(user->is_guest){
+    if(g->user->is_guest){
         while(!pressed){
             print_buttons(menu, pregame_guest_options, 4, selected, y, x, 2);
             handle_selected_btn(&selected, 4, &pressed);
@@ -332,10 +332,10 @@ void load_pregame_page(User* user, Player* player, Game* g){
         }
     }
     
-    if(selected == 2 - user->is_guest){
-        show_leaderboard(*user);
-    }else if(selected == 3 - user->is_guest){
-        show_setting(player, g);
+    if(selected == 2 - g->user->is_guest){
+        show_leaderboard(*(g->user));
+    }else if(selected == 3 - g->user->is_guest){
+        show_setting(g);
     }
 
     delwin(menu);

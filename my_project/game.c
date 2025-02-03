@@ -9,7 +9,7 @@
 
 #include "basic_loads.h"
 
-void load_main_game(User* user, Player* player, Game* g){
+void load_main_game(Game* g){
     clear();
 
     start_color();

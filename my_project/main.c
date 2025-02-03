@@ -35,13 +35,11 @@ int main(){
     reset_user_data(&user);
 
     game.user = &user;
-    Player player;
-    game.player = &player;
     
     game_initalize();
     
     load_first_page(&user);
-    load_pregame_page(&user, &player, &game);
+    load_pregame_page(&game);
 
     // load_main_game();
     endwin();

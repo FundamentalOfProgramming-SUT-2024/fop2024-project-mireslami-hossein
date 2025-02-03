@@ -42,12 +42,9 @@ enum ColorPairs {
 
 // Structs
 typedef struct{
-    int color_id;
-} Player;
-
-typedef struct{
     int x,y;
 } Loc;
+
 
 typedef struct {
     char* username;
@@ -64,6 +61,7 @@ typedef struct {
     // Time to first Game
     time_t experience;
     
+    int color_id;
     int last_game_id;
 
 } User;
@@ -71,7 +69,6 @@ typedef struct {
 typedef struct{
     int hardness;
 
-    Player* player;
     User* user;
 } Game;
 
