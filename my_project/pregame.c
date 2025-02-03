@@ -146,7 +146,11 @@ void print_users(WINDOW* w, User user, int height, int width, int start_i, int m
 
             cJSON* t_user = users_sorted[i].user;
             t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
-            strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
+            if(t_user_data.rank <= 3){
+                strcpy(t_user_data.username, "Goat ");
+            }
+            strcat(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
+            // strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
             if(!user.is_guest && strcmp(t_user_data.username, user.username) == 0)
                 mode = 2;
 
