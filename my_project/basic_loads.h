@@ -45,7 +45,6 @@ typedef struct{
     int x,y;
 } Loc;
 
-
 typedef struct {
     char* username;
     char* password;
@@ -66,12 +65,36 @@ typedef struct {
 
 } User;
 
+typedef struct 
+{
+    Loc e1;
+    Loc e2;
+    Loc e3;
+    Loc e4;
+
+    int w;
+    int h;
+    
+    Loc door1;
+    Loc door2;
+} Room;
+
+typedef struct 
+{
+    char* map;
+    char* visited;
+    Room* rooms;
+    int rooms_num;
+
+} Map;
+
+
+
 typedef struct{
     int hardness;
-
+    Map* map;
     User* user;
 } Game;
-
 
 // graphics
 void add_color_rgb(int id, int r, int g, int b){
