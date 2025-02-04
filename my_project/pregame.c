@@ -6,6 +6,7 @@
 #include "cjson/cJSON.h"
 #include <regex.h>
 #include <time.h>
+#include <locale.h>
 
 #include "basic_loads.h"
 
@@ -103,7 +104,13 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
             wattron(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
             break;
     }
-
+    if(mode == 3 && user.rank == 1){
+        mvwprintw(w, y, x_start-3, "🥇 ");
+    } else if(mode == 3 && user.rank == 2){
+        mvwprintw(w, y, x_start-3, "🥈 ");
+    } else if(mode == 3 && user.rank == 3){
+        mvwprintw(w, y, x_start-3, "🥉 ");
+    }
     mvwprintw(w, y, x_start, "%d", user.rank);
     mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
     mvwprintw(w, y, x_start + 30 - (int)log10(user.points + 1)/2, "%d", user.golds);
@@ -146,8 +153,13 @@ void print_users(WINDOW* w, User user, int height, int width, int start_i, int m
 
             cJSON* t_user = users_sorted[i].user;
             t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
-            if(t_user_data.rank <= 3){
+            
+            if(t_user_data.rank == 1){
+                strcpy(t_user_data.username, "Leader ");
+            }else if(t_user_data.rank == 2){
                 strcpy(t_user_data.username, "Goat ");
+            }if(t_user_data.rank == 3){
+                strcpy(t_user_data.username, "Mr ");
             }
             strcat(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
             // strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
@@ -305,7 +317,6 @@ void show_setting(Game* g){
 
 void load_pregame_page(Game* g){
     clear();
-
     start_color();
     game_initalize();
     int height = 18, width = 40;

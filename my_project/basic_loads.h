@@ -7,6 +7,7 @@
 #include <ncurses.h>
 #include <time.h>
 #include "cjson/cJSON.h"
+#include <locale.h>
 
 // MAX_SIZES
 #define MAX_USERNAME 15
@@ -67,16 +68,12 @@ typedef struct {
 
 typedef struct 
 {
-    Loc e1;
-    Loc e2;
-    Loc e3;
-    Loc e4;
+    Loc e1, e2, e3, e4;
 
     int w;
     int h;
     
-    Loc door1;
-    Loc door2;
+    Loc door1, door2;
 } Room;
 
 typedef struct 
