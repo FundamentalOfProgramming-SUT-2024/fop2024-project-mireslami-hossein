@@ -9,6 +9,21 @@
 
 #include "basic_loads.h"
 
+bool is_empty_room(Room room, Loc loc){
+    if(loc.x == room.O.x && loc.y == room.O.y) return FALSE;
+    
+    return TRUE;
+}
+
+Loc find_empty_place_room(Room room){
+    Loc res;
+    while(1){
+        res.x = rand_in(room.e1.x+1, room.e4.x-1);
+        res.y = rand_in(room.e1.y+1, room.e4.y-1);
+
+        if(is_empty_room(room, res)) return res;
+    }
+}
 
 void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
@@ -24,6 +39,7 @@ void initialize_map(Game* g){
     map->width = width;
     map->height = height;
     for(int i = 0; i < levels_num; i++){
+        map->main_levels[i].number = i+1;
         map->main_levels[i].visited = (int**)malloc(height * sizeof(int*));
         map->main_levels[i].map = (char**)malloc(height * sizeof(char*));
         for(int j = 0; j < height; j++){
@@ -37,7 +53,12 @@ void initialize_map(Game* g){
     }
 }
 
-void draw_corridor_two_bends(WINDOW *win, int x1, int y1, int x2, int y2, int mode) {
+void putch_map(WINDOW* win, Level* level, int y, int x, char ch) {
+    // mvwaddch(win, y, x, ch);
+    level->map[y][x] = ch;
+}
+
+void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, int y2, int mode) {
     if(mode == 1){
         int mid_x = (x1 + x2) / 2;
 
@@ -45,94 +66,95 @@ void draw_corridor_two_bends(WINDOW *win, int x1, int y1, int x2, int y2, int mo
         int end_x   = (x1 < mid_x) ? mid_x : x1;
         
         for (int x = start_x; x <= end_x; x++) {
-            mvwaddch(win, y1, x, '#');
+            putch_map(win, level, y1, x, '#');
         }
         
         int start_y = (y1 < y2) ? y1 : y2;
         int end_y   = (y1 < y2) ? y2 : y1;
         for (int y = start_y; y <= end_y; y++) {
-            mvwaddch(win, y, mid_x, '#');
+            putch_map(win, level, y, mid_x, '#');
         }
         
         start_x = (mid_x < x2) ? mid_x : x2;
         end_x   = (mid_x < x2) ? x2 : mid_x;
         for (int x = start_x; x <= end_x; x++) {
-            mvwaddch(win, y2, x, '#');
+            putch_map(win, level, y2, x, '#');
         }
-    } else{
+    } else {
         int mid_y = (y1 + y2) / 2;
 
         int start_y = (y1 < mid_y) ? y1 : mid_y;
         int end_y   = (y1 < mid_y) ? mid_y : y1;
         
         for (int y = start_y; y <= end_y; y++) {
-            mvwaddch(win, y, x1,'#');
+            putch_map(win, level, y, x1, '#');
         }
         
         int start_x = (x1 < x2) ? x1 : x2;
         int end_x   = (x1 < x2) ? x2 : x1;
         for (int x = start_x; x <= end_x; x++) {
-            mvwaddch(win, mid_y, x, '#');
+            putch_map(win, level, mid_y, x, '#');
         }
         
         start_y = (mid_y < y2) ? mid_y : y2;
         end_y   = (mid_y < y2) ? y2 : mid_y;
         for (int y = start_y; y <= end_y; y++) {
-            mvwaddch(win,  y, x2, '#');
+            putch_map(win, level, y, x2, '#');
         }
     }
 
     wrefresh(win);
 }
 
-void draw_corridor_one_bend(WINDOW *win, int x1, int y1, int x2, int y2){
+void draw_corridor_one_bend(WINDOW *win, Level* level, int x1, int y1, int x2, int y2){
     int start_x = min(x1, x2);
     int end_x   = max(x1, x2);
     
     for (int x = start_x; x <= end_x; x++) {
-        mvwaddch(win, y1, x, '#');
+        putch_map(win, level, y1, x, '#');
     }
 
     int start_y = min(y1, y2);
     int end_y   = max(y1, y2);
     
     for (int y = start_y; y <= end_y; y++) {
-        mvwaddch(win, y, end_x, '#');
+        putch_map(win, level, y, end_x, '#');
     }
 
     wrefresh(win);
 }
 
+
 void connect_door_pairs(WINDOW *win, Level *level) {
     for(int i = 0; i < 3; i++){
-        draw_corridor_two_bends(win, level->rooms[i].doors[1].loc.x,
+        draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
                                     level->rooms[i+1].doors[0].loc.y, 1);
     }
     for(int i = 4; i < 6; i++){
-        draw_corridor_two_bends(win, level->rooms[i].doors[1].loc.x,
+        draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
                                     level->rooms[i+1].doors[0].loc.y, 1);
     }
-    draw_corridor_two_bends(win, level->rooms[0].doors[0].loc.x,
+    draw_corridor_two_bends(win, level, level->rooms[0].doors[0].loc.x,
                                     level->rooms[0].doors[0].loc.y,
                                     level->rooms[4].doors[0].loc.x,
                                     level->rooms[4].doors[0].loc.y, 2);
     
     if(level->rooms_num == 8){
-        draw_corridor_two_bends(win, level->rooms[6].doors[1].loc.x,
+        draw_corridor_two_bends(win, level, level->rooms[6].doors[1].loc.x,
                                     level->rooms[6].doors[1].loc.y,
                                     level->rooms[7].doors[0].loc.x,
                                     level->rooms[7].doors[0].loc.y, 1);
         
-        draw_corridor_two_bends(win, level->rooms[7].doors[1].loc.x,
+        draw_corridor_two_bends(win, level, level->rooms[7].doors[1].loc.x,
                                     level->rooms[7].doors[1].loc.y,
                                     level->rooms[3].doors[1].loc.x,
                                     level->rooms[3].doors[1].loc.y, 2);
     } else{
-        draw_corridor_one_bend(win, level->rooms[6].doors[1].loc.x,
+        draw_corridor_one_bend(win, level, level->rooms[6].doors[1].loc.x,
                                     level->rooms[6].doors[1].loc.y,
                                     level->rooms[3].doors[1].loc.x,
                                     level->rooms[3].doors[1].loc.y);
@@ -174,13 +196,10 @@ void add_doors_to_room(int i, Room *room) {
     }
 }
 
-void putch_map(WINDOW* win, Level* level, int y, int x, char ch) {
-    mvwaddch(win, y, x, ch);
-    level->map[y][x] = ch;
-}
-
-void draw_rooms_and_corridors(WINDOW* win, int h, int w, Level* level){
+void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
     // for each room
+    Level* level = &map->main_levels[i];
+
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
 
@@ -226,6 +245,11 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Level* level){
         
     }
     // Stair
+    int room_num = rand_in(1, level->rooms_num);
+    Room t_room = level->rooms[room_num];
+    Stair stair;
+    stair.level_num = level->number;
+    stair.loc = find_empty_place_room(t_room);
     // trap (hidden)
     // foods
     // golds
@@ -244,38 +268,40 @@ void make_random_map(Game* g){
     refresh();
     box(main_game, 0, 0);
     wrefresh(main_game);
-    
-    int rooms_num = g->map->main_levels[0].rooms_num;
-    Room* map_rooms = g->map->main_levels[0].rooms;
-    for (int i = 0; i < rooms_num; i++){
-        int x_s = (width / 4) * (i % 4) + 1;
-        int x_f = (width / 4) * ((i % 4) + 1) - 1;
-        int y_s = (height / 2) * (i / 4) + 1;
-        int y_f = (height / 2) * ((i / 4) + 1) - 1;
+    // setting rooms & Levels
+    for(int j = 0; j < g->map->levels_num; j++){
+        int rooms_num = g->map->main_levels[j].rooms_num;
+        Room* map_rooms = g->map->main_levels[j].rooms;
+        for (int i = 0; i < rooms_num; i++){
+            int x_s = (width / 4) * (i % 4) + 1;
+            int x_f = (width / 4) * ((i % 4) + 1) - 1;
+            int y_s = (height / 2) * (i / 4) + 1;
+            int y_f = (height / 2) * ((i / 4) + 1) - 1;
+            
+            int w_room = rand_in(7, 10);
+            int h_room = rand_in(5, 9);
+            
+            map_rooms[i].e1.x = rand_in(x_s, x_f - w_room - 1);
+            map_rooms[i].e1.y = rand_in(y_s, y_f - h_room - 1);
+            map_rooms[i].w = w_room;
+            map_rooms[i].h = h_room;
+            
+            map_rooms[i].e2.x = map_rooms[i].e1.x + w_room;
+            map_rooms[i].e2.y = map_rooms[i].e1.y;
+            
+            map_rooms[i].e3.x = map_rooms[i].e1.x;
+            map_rooms[i].e3.y = map_rooms[i].e1.y + h_room;
+            
+            map_rooms[i].e4.x = map_rooms[i].e1.x + w_room;
+            map_rooms[i].e4.y = map_rooms[i].e1.y + h_room;
+            
+            map_rooms[i].window.x = map_rooms[i].window.y = 0;
+            map_rooms[i].O.x = map_rooms[i].O.y = 0;
+            map_rooms[i].is_visited = false;
+        }
         
-        int w_room = rand_in(6, 9);
-        int h_room = rand_in(5, 9);
-        
-        map_rooms[i].e1.x = rand_in(x_s, x_f - w_room - 1);
-        map_rooms[i].e1.y = rand_in(y_s, y_f - h_room - 1);
-        map_rooms[i].w = w_room;
-        map_rooms[i].h = h_room;
-        
-        map_rooms[i].e2.x = map_rooms[i].e1.x + w_room;
-        map_rooms[i].e2.y = map_rooms[i].e1.y;
-        
-        map_rooms[i].e3.x = map_rooms[i].e1.x;
-        map_rooms[i].e3.y = map_rooms[i].e1.y + h_room;
-        
-        map_rooms[i].e4.x = map_rooms[i].e1.x + w_room;
-        map_rooms[i].e4.y = map_rooms[i].e1.y + h_room;
-        
-        map_rooms[i].window.x = map_rooms[i].window.y = 0;
-        map_rooms[i].O.x = map_rooms[i].O.y = 0;
-        map_rooms[i].is_visited = false;
+        draw_rooms_and_corridors(main_game, height, width, g->map, j);
     }
-    
-    draw_rooms_and_corridors(main_game, height, width, &g->map->main_levels[0]);
 
     getch();
     delwin(main_game);

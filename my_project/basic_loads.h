@@ -69,6 +69,12 @@ typedef struct {
 
 typedef struct 
 {
+    int type;
+    Loc loc;
+} Enchant;
+
+typedef struct 
+{
     int type; //type: 0: common, 1: magic, 2: perfect, -1: Bad
     int HP;
     Loc loc;
@@ -110,7 +116,12 @@ typedef struct
     
     Door doors[3];
     Loc window;
+
     Loc O;
+    Food foods[10];
+    Gold golds[10];
+    Weapon weapons[5];
+
     bool is_visited;
 } Room;
 
@@ -122,6 +133,7 @@ typedef struct
 
 typedef struct 
 {
+    int number;
     char** map;
     int** visited;
     Room* rooms;
