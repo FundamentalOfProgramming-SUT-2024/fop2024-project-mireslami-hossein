@@ -78,6 +78,7 @@ typedef struct
 {
     int type; //type: 0: common, 1: hidden, 2: pass
     Loc loc;
+    bool visible;
 } Trap;
 
 typedef struct 
@@ -121,14 +122,15 @@ typedef struct
 
 typedef struct 
 {
-    char* map;
-    char* visited;
+    char** map;
+    int** visited;
     Room* rooms;
     int rooms_num;
 } Level;
 
 typedef struct 
 {
+    int width, height;
     Level* main_levels;
     Level* visited_levels;
     int levels_num;
@@ -137,10 +139,11 @@ typedef struct
 } Map;
 
 typedef struct {
+    Loc now_loc;
     int hp;
     int hungriness;
     Food foods[5];
-    Weapon weapons[]
+    // Weapon weapons[];
 } Player;
 
 typedef struct {
@@ -305,6 +308,10 @@ void rand_ints(int* arr, int size, int a, int b, int ascending){
 // Math Functions
 int min(int a, int b){
     return (a < b) ? a : b;
+}
+
+int max(int a, int b){
+    return a < b ? b : a;
 }
 
 // string functions
