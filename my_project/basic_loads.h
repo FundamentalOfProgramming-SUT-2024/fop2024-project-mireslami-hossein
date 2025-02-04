@@ -66,15 +66,58 @@ typedef struct {
 
 } User;
 
+
 typedef struct 
 {
+    int type; //type: 0: common, 1: magic, 2: perfect, -1: Bad
+    int HP;
+    Loc loc;
+} Food;
+
+typedef struct 
+{
+    int type; //type: 0: common, 1: hidden, 2: pass
+    Loc loc;
+} Trap;
+
+typedef struct 
+{
+    int type; //type: 0: common, 1: 
+    int num;
+    Loc loc;
+} Weapon;
+
+typedef struct 
+{
+    int type; //type: 0: common, 1: black
+    Loc loc;
+} Gold;
+
+typedef struct 
+{
+    int type; //type: 0: common, 1: hidden, 2: pass
+    Loc loc;
+} Door;
+
+typedef struct 
+{
+    int type; //type: 0: common, 1: enchant, 2: treasure
     Loc e1, e2, e3, e4;
 
     int w;
     int h;
     
-    Loc door1, door2;
+    Door doors[3];
+    Loc window;
+    Loc O;
+    bool is_visited;
 } Room;
+
+typedef struct 
+{
+    Loc loc;
+    int level_num;
+} Stair;
 
 typedef struct 
 {
@@ -82,15 +125,37 @@ typedef struct
     char* visited;
     Room* rooms;
     int rooms_num;
+} Level;
 
+typedef struct 
+{
+    Level* main_levels;
+    Level* visited_levels;
+    int levels_num;
+    
+    bool show_all;
 } Map;
 
+typedef struct {
+    int hp;
+    int hungriness;
+    Food foods[5];
+    Weapon weapons[]
+} Player;
+
+typedef struct {
+    char name[MAX_USERNAME];
+    int hp;
+    int type;
+} Enemy;
 
 
 typedef struct{
     int hardness;
     Map* map;
     User* user;
+    
+    Player player;
 } Game;
 
 // graphics
@@ -205,7 +270,7 @@ void handle_selected_btn(int* selected, int size, int* flag){
 // randoms
 int rand_in(int a, int b){
     if(a == b) return a;
-    return (rand() % (b-a) + a);
+    return (rand() % (b-a+1) + a);
 }
 
 void rand_ints(int* arr, int size, int a, int b, int ascending){

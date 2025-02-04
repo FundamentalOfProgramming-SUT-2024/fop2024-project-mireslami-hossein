@@ -1,13 +1,13 @@
 /*
 To Run The GAME compile it by entering this command in terminal:
 
-gcc main.c -o game.out -lncurses -lcjson -lm && ./game.out
+gcc main.c -o game.out -lncursesw -lcjson -lm && ./game.out
 
 */ 
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ncurses.h>
+#include <ncursesw/ncurses.h>
 
 #include "basic_loads.h"
 #include "login.c"
@@ -17,6 +17,7 @@ gcc main.c -o game.out -lncurses -lcjson -lm && ./game.out
 
 
 int main(){
+    setlocale(LC_ALL, "");
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
