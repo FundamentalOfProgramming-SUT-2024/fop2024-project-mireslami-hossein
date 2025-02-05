@@ -40,6 +40,8 @@ enum ColorPairs {
     
     WHITE_TEXT,
     GREEN_TEXT,
+    GREEN_TEXT_WHITE,
+    GREEN_TEXT_YELLOW,
     CYAN_TEXT,
     ORANGE_TEXT,
     YELLOW_TEXT,
@@ -151,6 +153,7 @@ typedef struct
     Room* rooms;
     int rooms_num;
 
+    int stair_room_index;
     int mode;
 } Level;
 
@@ -527,6 +530,8 @@ void game_initalize(){
     
     init_pair(WHITE_TEXT, COLOR_WHITE , COLOR_BLACK);
     init_pair(GREEN_TEXT, COLOR_GREEN , COLOR_BLACK);
+    init_pair(GREEN_TEXT_WHITE, COLOR_GREEN , COLOR_WHITE);
+    init_pair(GREEN_TEXT_YELLOW, COLOR_GREEN , CUSTOM_YELLOW);
     init_pair(CYAN_TEXT, COLOR_CYAN , COLOR_BLACK);
     init_pair(ORANGE_TEXT, CUSTOM_ORANGE_2 , COLOR_BLACK);
     init_pair(YELLOW_TEXT, CUSTOM_YELLOW , COLOR_BLACK);

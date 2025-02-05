@@ -8,52 +8,23 @@
 #include <time.h>
 
 #include "basic_loads.h"
-
-bool is_empty_room(Room room, Loc loc){
-    if(loc.x == room.O.x && loc.y == room.O.y) return FALSE;
-    
-    return TRUE;
+// کمکی
+bool is_empty_room(Level level, Room room, Loc loc){
+    if(level.map[loc.y][loc.x] == '.')
+        return TRUE;
+    return FALSE;
 }
 
-Loc find_empty_place_room(Room room){
+Loc find_empty_place_room(Level level, Room room){
     Loc res;
     while(1){
         res.x = rand_in(room.e1.x+1, room.e4.x-1);
         res.y = rand_in(room.e1.y+1, room.e4.y-1);
 
-        if(is_empty_room(room, res)) return res;
+        if(is_empty_room(level, room, res)) return res;
     }
 }
 
-void initialize_map(Game* g){
-    Map* map = malloc(sizeof(Map));
-    g->map = map;
-    
-    int levels_num = 4;
-    map->levels_num = levels_num;
-    map->main_levels = (Level*)malloc(levels_num * sizeof(Level));
-    map->visited_levels = (Level*)malloc(levels_num * sizeof(Level));
-    map->show_all = TRUE;
-
-    int width = COLS - 22, height = 30;
-    map->width = width;
-    map->height = height;
-    for(int i = 0; i < levels_num; i++){
-        map->main_levels[i].number = i+1;
-        map->main_levels[i].visited = (int**)malloc(height * sizeof(int*));
-        map->main_levels[i].map = (char**)malloc(height * sizeof(char*));
-        for(int j = 0; j < height; j++){
-            map->main_levels[i].map[j] = (char*)malloc(width * sizeof(char));
-            map->main_levels[i].visited[j] = (int*)malloc(width * sizeof(int));
-        }
-        map->main_levels[i].rooms_num = 8;
-        
-        Room* map_rooms = malloc(map->main_levels[i].rooms_num * sizeof(Room));
-        map->main_levels[i].rooms = map_rooms;
-    }
-}
-
-// کمکی
 void putch_map(WINDOW* win, Level* level, int y, int x, char ch, int color) {
     wattron(win, COLOR_PAIR(color));
     mvwaddch(win, y, x, ch);
@@ -109,8 +80,55 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
     wrefresh(win);
 }
 
+void set_room(Room *room, int e1_x, int e1_y, int w, int h){
+    room->e1.x = e1_x;
+    room->e1.y = e1_y;
+    room->w = w;
+    room->h = h;
+    
+    room->e2.x = room->e1.x + w;
+    room->e2.y = room->e1.y;
+    
+    room->e3.x = room->e1.x;
+    room->e3.y = room->e1.y + h;
+    
+    room->e4.x = room->e1.x + w;
+    room->e4.y = room->e1.y + h;
+    room->window.x = room->window.y = 0;
+    room->O.x = room->O.y = 0;
+    room->is_visited = false;
+}
 
 // تابع اصلی
+void initialize_map(Game* g){
+    Map* map = malloc(sizeof(Map));
+    g->map = map;
+    
+    int levels_num = 4;
+    map->levels_num = levels_num;
+    map->main_levels = (Level*)malloc(levels_num * sizeof(Level));
+    map->visited_levels = (Level*)malloc(levels_num * sizeof(Level));
+    map->show_all = TRUE;
+
+    int width = COLS - 22, height = 30;
+    map->width = width;
+    map->height = height;
+    // For each level
+    for(int i = 0; i < levels_num; i++){
+        map->main_levels[i].number = i+1;
+        map->main_levels[i].visited = (int**)malloc(height * sizeof(int*));
+        map->main_levels[i].map = (char**)malloc(height * sizeof(char*));
+        for(int j = 0; j < height; j++){
+            map->main_levels[i].map[j] = (char*)malloc(width * sizeof(char));
+            map->main_levels[i].visited[j] = (int*)malloc(width * sizeof(int));
+        }
+        map->main_levels[i].rooms_num = 8;
+        
+        Room* map_rooms = malloc(map->main_levels[i].rooms_num * sizeof(Room));
+        map->main_levels[i].rooms = map_rooms;
+    }
+}
+
 void connect_door_pairs(WINDOW *win, Level *level) {
     // دوری
     for(int i = 0; i < 3; i++){
@@ -191,20 +209,11 @@ void add_doors_to_room(int i, Room *room, int mode) {
             room->doors[2].loc.x = rand_in(room->e1.x + 2 ,room->e4.x - 2);
             room->doors[2].loc.y = room->e4.y;
             break;
-        // case 3:
-        //     room->doors[2].loc.x = room->e3.x + 1;
-        //     room->doors[2].loc.y = room->e4.y;
-        //     break;
         case 5: case 6:
             room->doors[2].loc.x = rand_in(room->e1.x + 2 ,room->e4.x - 2);
             room->doors[2].loc.y = room->e1.y;
             
-            // room->doors[3].loc.x = rand_in(room->e1.x + 3 ,room->e4.x - 3);
-            // room->doors[3].loc.y = room->e1.y;
             break;
-        // case 6:
-        //     room->doors[2].loc.x = rand_in(room->e1.x + 3 ,room->e4.x - 2);
-        //     room->doors[2].loc.y = room->e1.y;
     }
     // anchents
     switch(mode){
@@ -249,9 +258,9 @@ void add_doors_to_room(int i, Room *room, int mode) {
     }
 }
 
-void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
+void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num){
     // for each room
-    Level* level = &map->main_levels[i];
+    Level* level = &map->main_levels[level_num];
     
     level->mode = rand_in(1,5); //mode 1: none hidden / mode 2: 2 anchent / mode 3: 5 anchent
                                 // mode 4: 6 / mode 5: 7
@@ -326,11 +335,23 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
     }
 
     // Stair
-    int room_num = rand_in(1, level->rooms_num);
-    Room t_room = level->rooms[room_num];
+    int stair_room_index = rand_in(1, level->rooms_num - 1);
+    level->stair_room_index = stair_room_index;
+    Room* t_room = &level->rooms[stair_room_index];
+
     Stair stair;
     stair.level_num = level->number;
-    stair.loc = find_empty_place_room(t_room);
+    stair.loc = find_empty_place_room(*level, *t_room);
+    stair.is_down = TRUE;
+    if(level_num == 3){
+        putch_map(win, level, stair.loc.y, stair.loc.x, '>', GREEN_TEXT_YELLOW);
+    } else{
+        putch_map(win, level, stair.loc.y, stair.loc.x, '>', GREEN_TEXT_WHITE);
+    }
+
+    if(level_num != 0){
+
+    }
     // trap (hidden)
     // foods
     // golds
@@ -350,41 +371,35 @@ void make_random_map(Game* g){
     box(main_game, 0, 0);
     wrefresh(main_game);
     // setting rooms & Levels
+    
     // For each level
     for(int j = 0; j < g->map->levels_num; j++){
-        if(j == 1){
-            int rooms_num = g->map->main_levels[j].rooms_num;
-            Room* map_rooms = g->map->main_levels[j].rooms;
-            for (int i = 0; i < rooms_num; i++){
-                int x_s = (width / 4) * (i % 4) + 1;
-                int x_f = (width / 4) * ((i % 4) + 1) - 1;
-                int y_s = (height / 2) * (i / 4) + 1;
-                int y_f = (height / 2) * ((i / 4) + 1) - 1;
-                
-                int w_room = rand_in(7, 10);
-                int h_room = rand_in(5, 9);
-                
-                map_rooms[i].e1.x = rand_in(x_s, x_f - w_room - 1);
-                map_rooms[i].e1.y = rand_in(y_s, y_f - h_room - 1);
-                map_rooms[i].w = w_room;
-                map_rooms[i].h = h_room;
-                
-                map_rooms[i].e2.x = map_rooms[i].e1.x + w_room;
-                map_rooms[i].e2.y = map_rooms[i].e1.y;
-                
-                map_rooms[i].e3.x = map_rooms[i].e1.x;
-                map_rooms[i].e3.y = map_rooms[i].e1.y + h_room;
-                
-                map_rooms[i].e4.x = map_rooms[i].e1.x + w_room;
-                map_rooms[i].e4.y = map_rooms[i].e1.y + h_room;
-                
-                map_rooms[i].window.x = map_rooms[i].window.y = 0;
-                map_rooms[i].O.x = map_rooms[i].O.y = 0;
-                map_rooms[i].is_visited = false;
-            }
+        int rooms_num = g->map->main_levels[j].rooms_num;
+        Room* map_rooms = g->map->main_levels[j].rooms;
+        for (int i = 0; i < rooms_num; i++){
+            int x_s = (width / 4) * (i % 4) + 1;
+            int x_f = (width / 4) * ((i % 4) + 1) - 1;
+            int y_s = (height / 2) * (i / 4) + 1;
+            int y_f = (height / 2) * ((i / 4) + 1) - 1;
             
-            draw_rooms_and_corridors(main_game, height, width, g->map, j);
+            int w_room = rand_in(7, 10);
+            int h_room = rand_in(5, 9);
+            
+            set_room(&map_rooms[i], rand_in(x_s, x_f - w_room - 1), rand_in(y_s, y_f - h_room - 1), w_room, h_room);
         }
+        
+        if(j != 0){
+            Level pre_lev = g->map->main_levels[j-1];
+            int i = pre_lev.stair_room_index;
+            Room* last_level_rooms = pre_lev.rooms;
+            set_room(&map_rooms[i], last_level_rooms[i].e1.x, last_level_rooms[i].e1.y,
+                     last_level_rooms[i].w, last_level_rooms[i].h);
+            
+        }
+        
+        draw_rooms_and_corridors(main_game, height, width, g->map, j);
+        getch();
+        wclear(main_game);
     }
 
     getch();
