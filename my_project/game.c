@@ -448,8 +448,31 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
                 put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  RED_TEXT);
             }
         } 
-        // enchants
 
+        // enchants
+        if(r->type == 1){
+            int enchant_num = rand_in(2 + r->w/5 + r->h/5, 5 + r->w/5 + r->h/5);
+            r->enchants = (Enchant*)malloc(enchant_num * sizeof(Enchant));
+            for(int j = 0; j < enchant_num; j ++){
+                r->enchants[j].loc = find_empty_place_room(*level, *r, 1);
+                rand_num = rand_in(0, 2);
+                if (rand_num == 0){
+                    r->enchants[j].type = 0;
+                    r->enchants[j].HP_regen = 12;
+                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695",  PINK_TEXT);
+                } else if (rand_num == 1){
+                    r->enchants[j].type = 1;
+                    r->enchants[j].speed = 2;
+                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7",  PINK_TEXT);
+                } else if (rand_num == 2){
+                    r->enchants[j].type = 2;
+                    r->enchants[j].power = 2;
+                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620",  PINK_TEXT);
+                }
+                r->enchants[j].time = 10;
+            }
+
+        }
 
         // weapons
         int weapons_num = rand_in(0, 1 + r->w/7 + r->h/7);

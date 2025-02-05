@@ -24,7 +24,8 @@ enum CustomColors {
     CUSTOM_ORANGE_2,
     CUSTOM_YELLOW,
     CUSTOM_BLACK,
-    CUSTOM_LIGHT_GREEN
+    CUSTOM_LIGHT_GREEN,
+    CUSTOM_PINK
 };
 
 
@@ -50,7 +51,8 @@ enum ColorPairs {
     PURPLE_TEXT,
     RED_TEXT,
     BLACK_TEXT,
-    LIGHT_GREEN_TEXT
+    LIGHT_GREEN_TEXT,
+    PINK_TEXT
 };
 
 // Structs
@@ -158,6 +160,7 @@ typedef struct
     Loc O;
     Trap traps[25];
     Food foods[10];
+    Enchant* enchants;
     Gold golds[10];
     Weapon weapons[5];
 
@@ -541,6 +544,7 @@ void game_initalize(){
     add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
     add_color_rgb(CUSTOM_BLACK, 61, 42, 0);
     add_color_rgb(CUSTOM_LIGHT_GREEN, 79, 176, 23);
+    add_color_rgb(CUSTOM_PINK, 190, 174, 255);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
@@ -563,6 +567,7 @@ void game_initalize(){
     init_pair(RED_TEXT, COLOR_RED , COLOR_BLACK);
     init_pair(BLACK_TEXT, CUSTOM_BLACK , COLOR_BLACK);
     init_pair(LIGHT_GREEN_TEXT, CUSTOM_LIGHT_GREEN , COLOR_BLACK);
+    init_pair(PINK_TEXT, CUSTOM_PINK , COLOR_BLACK);
 
     srand(time(NULL));
 }
