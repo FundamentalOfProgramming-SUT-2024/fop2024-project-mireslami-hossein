@@ -755,6 +755,17 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
                     case 'D': case 'F': case 'G': case 'S': case 'U':
                         draw_in_map(win, j, i, ch, LIGHT_YELLOW_TEXT, TRUE);
                         break;
+                    case 'E':
+                        Enchant* enchant = get_enchant_by_room(r, i, j);
+                        
+                        if(enchant->type == 0){
+                            draw_in_map(win, j, i, "⚕", PINK_TEXT, FALSE);
+                        }else if(enchant->type == 1){
+                            draw_in_map(win, j, i, "⛷", PINK_TEXT, FALSE);
+                        }else if(enchant->type == 2){
+                            draw_in_map(win, j, i, "Ψ", PINK_TEXT, FALSE);
+                        }
+                        break;
                     case '>':
                         if(level->number == 3){
                             draw_in_map(win, j, i, ch, GREEN_TEXT_YELLOW, TRUE);
