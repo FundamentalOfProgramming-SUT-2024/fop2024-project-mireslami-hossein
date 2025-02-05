@@ -16,6 +16,8 @@
 
 #define MAX_OBJ_ROOM 10
 #define MAX_WEAPON_ROOM 10
+#define MAX_DOORS_ROOM 3
+#define MAX_ENEMY_LEVEL 30
 
 // New COLORS
 enum CustomColors {
@@ -131,6 +133,7 @@ typedef struct
 typedef struct 
 {
     int type; //type: 0: common, 1: hidden
+    bool is_visible;
     Loc loc;
 } Door;
 
@@ -159,10 +162,10 @@ typedef struct
     int w;
     int h;
     
-    Door doors[4];
     Loc window;
-
     Loc O;
+
+    Door doors[MAX_DOORS_ROOM];
     Trap traps[MAX_OBJ_ROOM];
     Food foods[MAX_OBJ_ROOM];
     Enchant* enchants;
@@ -183,6 +186,8 @@ typedef struct
 
     int stair_room_index;
     Stair stairs[2];
+
+    Enemy enemys[MAX_ENEMY_LEVEL];
 
     int mode;
 } Level;
@@ -218,7 +223,6 @@ typedef struct{
     int hardness;
     Map* map;
     User* user;
-    Enemy enemys[30];
     Player player;
 } Game;
 

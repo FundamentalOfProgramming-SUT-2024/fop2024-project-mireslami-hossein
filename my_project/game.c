@@ -37,10 +37,16 @@ void putch_map(Level* level, int y, int x, char ch) {
     level->map[y][x] = ch;
 }
 
-void draw_in_map(WINDOW* win, int y, int x, char* str, int color){
+void draw_in_map(WINDOW* win, int y, int x, char* str, int color, bool is_bold){
+    if(is_bold){
+        wattron(win, A_BOLD);
+    }
     wattron(win, COLOR_PAIR(color));
     mvwaddstr(win, y, x, str);
     wattroff(win, COLOR_PAIR(color));
+    if(is_bold){
+        wattroff(win, A_BOLD);
+    }
 }
 
 void draw_corridor_two_bends(Level* level, int x1, int y1, int x2, int y2, int mode) {
@@ -124,7 +130,13 @@ int find_good_id_for_room(Map* map, int level_num){
     return res;
 }
 
-
+Door* get_door_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_DOORS_ROOM; i++){
+        if(r->doors[i].loc.x == x && r->doors[i].loc.y == y)
+            return &r->doors[i];
+    }
+    return NULL;
+}
 Gold* get_gold_by_room(Room* r, int x, int y){
     for(int i = 0; i < MAX_OBJ_ROOM; i++){
         if(r->golds[i].loc.x == x && r->golds[i].loc.y == y)
@@ -146,6 +158,29 @@ Trap* get_trap_by_room(Room* r, int x, int y){
     }
     return NULL;
 }
+Enchant* get_enchant_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_OBJ_ROOM; i++){
+        if(r->enchants[i].loc.x == x && r->enchants[i].loc.y == y)
+            return &r->enchants[i];
+    }
+    return NULL;
+}
+Weapon* get_weapon_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_OBJ_ROOM; i++){
+        if(r->weapons[i].loc.x == x && r->weapons[i].loc.y == y)
+            return &r->weapons[i];
+    }
+    return NULL;
+}
+Enemy* get_enemy_by_loc(Level* level, int x, int y){
+    for(int i = 0; i < MAX_ENEMY_LEVEL; i++){
+        if(level->enemys[i].loc.x == x && level->enemys[i].loc.y == y)
+            return &level->enemys[i];
+    }
+    return NULL;
+}
+
+
 // توابع اصلی
 void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
@@ -318,22 +353,23 @@ if(level_num == 3 && r->type == 2){
 }
 X : RED_TEXT
 // gold
-draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", YELLOW_TEXT);
-draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", BLACK_TEXT);
+draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", YELLOW_TEXT, FALSE);
+draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", BLACK_TEXT, FALSE);
 // foods
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", LIGHT_GREEN_TEXT);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", CYAN_TEXT);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", LIGHT_YELLOW_TEXT);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", RED_TEXT);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", LIGHT_GREEN_TEXT, FALSE);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", CYAN_TEXT, FALSE);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", LIGHT_YELLOW_TEXT, FALSE);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", RED_TEXT, FALSE);
 // enchents
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695", PINK_TEXT);
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7", PINK_TEXT);
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620", PINK_TEXT);
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695", PINK_TEXT, FALSE);
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7", PINK_TEXT, FALSE);
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620", PINK_TEXT, FALSE);
 //weapon
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔", WHITE_TEXT);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄", WHITE_TEXT);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳", WHITE_TEXT);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡", WHITE_TEXT);
+"𓌉"
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔", WHITE_TEXT, FALSE);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄", WHITE_TEXT, FALSE);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳", WHITE_TEXT, FALSE);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡", WHITE_TEXT, FALSE);
 
 */
 
@@ -486,7 +522,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
                 r->foods[j].HP = -50;
                 r->foods[j].time = 0;
             }
-            putch_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F');
+            putch_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N');
         } 
 
         // enchants
@@ -535,7 +571,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
                 r->weapons[j].num = 1;
                 r->weapons[j].damage = 10;
             }
-
+            putch_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'W');
         }
         // enenmies
         int enemy_num = rand_in(0, 1 + r->w/7 + r->h/7);
@@ -543,38 +579,38 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
             enemy_num = rand_in(4, 4 + r->w/7 + r->h/7);
         }
         for(int j = 0; j < enemy_num; j ++){
-            g->enemys[j].loc = find_empty_place_room(*level, *r, 1);
+            level->enemys[j].loc = find_empty_place_room(*level, *r, 1);
 
             rand_num = rand_in(0, 4);
             if (rand_num == 0){
-                g->enemys[j].type = 0;
-                g->enemys[j].damage = 5;
-                g->enemys[j].hp = 5;
-                g->enemys[j].possible_moves = 0;
+                level->enemys[j].type = 0;
+                level->enemys[j].damage = 5;
+                level->enemys[j].hp = 5;
+                level->enemys[j].possible_moves = 0;
                 putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'D');
             }else if (rand_num == 1){
-                g->enemys[j].type = 1;
-                g->enemys[j].damage = 5;
-                g->enemys[j].hp = 10;
-                g->enemys[j].possible_moves = 0;
+                level->enemys[j].type = 1;
+                level->enemys[j].damage = 5;
+                level->enemys[j].hp = 10;
+                level->enemys[j].possible_moves = 0;
                 putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'F');
             } else if (rand_num == 2){
-                g->enemys[j].type = 2;
-                g->enemys[j].damage = 5;
-                g->enemys[j].hp = 15;
-                g->enemys[j].possible_moves = 5;
+                level->enemys[j].type = 2;
+                level->enemys[j].damage = 5;
+                level->enemys[j].hp = 15;
+                level->enemys[j].possible_moves = 5;
                 putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'G');
             }else if (rand_num == 3){
-                g->enemys[j].type = 3;
-                g->enemys[j].damage = 5;
-                g->enemys[j].hp = 20;
-                g->enemys[j].possible_moves = 1000;
+                level->enemys[j].type = 3;
+                level->enemys[j].damage = 5;
+                level->enemys[j].hp = 20;
+                level->enemys[j].possible_moves = 1000;
                 putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'S');
             } else {
-                g->enemys[j].type = 4;
-                g->enemys[j].damage = 5;
-                g->enemys[j].hp = 30;
-                g->enemys[j].possible_moves = 5;
+                level->enemys[j].type = 4;
+                level->enemys[j].damage = 5;
+                level->enemys[j].hp = 30;
+                level->enemys[j].possible_moves = 5;
                 putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'U');
             }
             
@@ -658,7 +694,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
             int color_id;
 
             if(map[j][i] == ' ') continue;
-            if(map[j][i] == '#') draw_in_map(win, j, i, "#", ORANGE_TEXT);
+            if(map[j][i] == '#') draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
         }
     }
     
@@ -674,17 +710,63 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
                 ch[1] = '\0';
                 switch(*ch){
                     case 'X':
-                        draw_in_map(win, j, i, ch, RED_TEXT);
+                        Trap* trap = get_trap_by_room(r, i, j);
+                        draw_in_map(win, j, i, ch, RED_TEXT, FALSE);
                         break;
                     case '$':
                         Gold* gold = get_gold_by_room(r, i, j);
+                        if(gold->type == 0){
+                            draw_in_map(win, j, i, "⛂", YELLOW_TEXT, FALSE);
+                        }
+                        else if(gold->type == 1){
+                            draw_in_map(win, j, i, "⛂", BLACK_TEXT, FALSE);
+                        }
+                        break;
+                    case 'N':
+                        Food* food = get_food_by_room(r, i, j);
                         int color;
-                        if(gold->type == 0) color = YELLOW_TEXT;
-                        if(gold->type == 1) color = BLACK_TEXT;
-                        draw_in_map(win, j, i, ch, color);
+                        if(food->type == 0){
+                            color = LIGHT_GREEN_TEXT;
+                        } else if(food->type == 0){
+                            color = CYAN_TEXT;
+                        }else if(food->type == 0){
+                            color = LIGHT_YELLOW_TEXT;
+                        } else{
+                            color = RED_TEXT;
+                        }
+                        draw_in_map(win, j, i, "⊙", color, FALSE);
+                        break;
+                    case 'W':
+                        Weapon* weapon = get_weapon_by_room(r, i, j);
+                        
+                        if(weapon->type == 0){
+                            draw_in_map(win, j, i, "𓌉", WHITE_TEXT, FALSE);
+                        }else if(weapon->type == 1){
+                            draw_in_map(win, j, i, "⚔", WHITE_TEXT, FALSE);
+                        }else if(weapon->type == 2){
+                            draw_in_map(win, j, i, "⚚", WHITE_TEXT, FALSE);
+                        }else if(weapon->type == 3){
+                            draw_in_map(win, j, i, "➳", WHITE_TEXT, FALSE);
+                        }else if(weapon->type == 4){
+                            draw_in_map(win, j, i, "🗡", WHITE_TEXT, FALSE);
+                        }
+                        break;
+
+                    case 'D': case 'F': case 'G': case 'S': case 'U':
+                        draw_in_map(win, j, i, ch, LIGHT_YELLOW_TEXT, TRUE);
+                        break;
+                    case '>':
+                        if(level->number == 3){
+                            draw_in_map(win, j, i, ch, GREEN_TEXT_YELLOW, TRUE);
+                        } else{
+                            draw_in_map(win, j, i, ch, GREEN_TEXT_WHITE, TRUE);
+                        }
+                        break;
+                    case '<':
+                        draw_in_map(win, j, i, ch, GREEN_TEXT_WHITE, TRUE);
                         break;
                     default:
-                        draw_in_map(win, j, i, ch, color_id);
+                        draw_in_map(win, j, i, ch, color_id, FALSE);
                 }
             }
         }
