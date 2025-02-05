@@ -33,21 +33,17 @@ Loc find_empty_place_room(Level level, Room room, int padding){
     // return res;
 }
 
-void putch_map(WINDOW* win, Level* level, int y, int x, char ch, int color) {
-    wattron(win, COLOR_PAIR(color));
-    mvwaddch(win, y, x, ch);
+void putch_map(Level* level, int y, int x, char ch) {
     level->map[y][x] = ch;
+}
+
+void draw_in_map(WINDOW* win, int y, int x, char* str, int color){
+    wattron(win, COLOR_PAIR(color));
+    mvwaddstr(win, y, x, str);
     wattroff(win, COLOR_PAIR(color));
 }
 
-void put_icon_map(WINDOW* win, Level* level, int y, int x, char ch, char* icon, int color){
-    wattron(win, COLOR_PAIR(color));
-    mvwaddstr(win, y, x, icon);
-    level->map[y][x] = ch;
-    wattroff(win, COLOR_PAIR(color));
-}
-
-void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, int y2, int mode) {
+void draw_corridor_two_bends(Level* level, int x1, int y1, int x2, int y2, int mode) {
     if(mode == 1){
         int mid_x = (x1 + x2) / 2;
 
@@ -55,19 +51,19 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
         int end_x   = max(x1, mid_x);
         
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, y1, x, '#', ORANGE_TEXT);
+            putch_map(level, y1, x, '#');
         }
         
         int start_y = min(y1, y2);
         int end_y   = max(y1, y2);
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, mid_x, '#', ORANGE_TEXT);
+            putch_map(level, y, mid_x, '#');
         }
         
         start_x = min(mid_x, x2);
         end_x   = max(mid_x, x2);
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, y2, x, '#', ORANGE_TEXT);
+            putch_map(level, y2, x, '#');
         }
     } else {
         int mid_y = (y1 + y2) / 2;
@@ -76,23 +72,21 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
         int end_y   = max(y1, mid_y);
         
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, x1, '#', ORANGE_TEXT);
+            putch_map(level, y, x1, '#');
         }
         
         int start_x = min(x1, x2);
         int end_x   = max(x1, x2);
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, mid_y, x, '#', ORANGE_TEXT);
+            putch_map(level, mid_y, x, '#');
         }
         
         start_y = min(mid_y, y2);
         end_y   = max(mid_y, y2);
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, x2, '#', ORANGE_TEXT);
+            putch_map(level, y, x2, '#');
         }
     }
-
-    wrefresh(win);
 }
 
 void set_room(Room *room, int e1_x, int e1_y, int w, int h){
@@ -130,7 +124,29 @@ int find_good_id_for_room(Map* map, int level_num){
     return res;
 }
 
-// تابع اصلی
+
+Gold* get_gold_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_OBJ_ROOM; i++){
+        if(r->golds[i].loc.x == x && r->golds[i].loc.y == y)
+            return &r->golds[i];
+    }
+    return NULL;
+}
+Food* get_food_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_OBJ_ROOM; i++){
+        if(r->foods[i].loc.x == x && r->foods[i].loc.y == y)
+            return &r->foods[i];
+    }
+    return NULL;
+}
+Trap* get_trap_by_room(Room* r, int x, int y){
+    for(int i = 0; i < MAX_OBJ_ROOM; i++){
+        if(r->traps[i].loc.x == x && r->traps[i].loc.y == y)
+            return &r->traps[i];
+    }
+    return NULL;
+}
+// توابع اصلی
 void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
     g->map = map;
@@ -151,7 +167,10 @@ void initialize_map(Game* g){
         map->main_levels[i].map = (char**)malloc(height * sizeof(char*));
         for(int j = 0; j < height; j++){
             map->main_levels[i].map[j] = (char*)malloc(width * sizeof(char));
-            map->main_levels[i].visited[j] = (int*)malloc(width * sizeof(int));
+            for(int z = 0; z < width; z++){
+                map->main_levels[i].map[j][z] = ' ';
+            }
+            map->main_levels[i].visited[j] = (int*)calloc(width, sizeof(int));
         }
         map->main_levels[i].rooms_num = 8;
         
@@ -160,36 +179,36 @@ void initialize_map(Game* g){
     }
 }
 
-void connect_door_pairs(WINDOW *win, Level *level) {
+void connect_door_pairs(Level *level) {
     // دوری
     for(int i = 0; i < 3; i++){
-        draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
+        draw_corridor_two_bends(level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
                                     level->rooms[i+1].doors[0].loc.y, 1);
     }
     for(int i = 4; i < 7; i++){
-        draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
+        draw_corridor_two_bends(level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
                                     level->rooms[i+1].doors[0].loc.y, 1);
     }
-    draw_corridor_two_bends(win, level, level->rooms[0].doors[0].loc.x,
+    draw_corridor_two_bends(level, level->rooms[0].doors[0].loc.x,
                                     level->rooms[0].doors[0].loc.y,
                                     level->rooms[4].doors[0].loc.x,
                                     level->rooms[4].doors[0].loc.y, 2);
     
-    draw_corridor_two_bends(win, level, level->rooms[7].doors[1].loc.x,
+    draw_corridor_two_bends(level, level->rooms[7].doors[1].loc.x,
                                 level->rooms[7].doors[1].loc.y,
                                 level->rooms[3].doors[1].loc.x,
                                 level->rooms[3].doors[1].loc.y, 2);
 
     // فرعی ها
-    draw_corridor_two_bends(win, level, level->rooms[1].doors[2].loc.x,
+    draw_corridor_two_bends(level, level->rooms[1].doors[2].loc.x,
                                     level->rooms[1].doors[2].loc.y,
                                     level->rooms[5].doors[2].loc.x,
                                     level->rooms[5].doors[2].loc.y, 2);
-    draw_corridor_two_bends(win, level, level->rooms[2].doors[2].loc.x,
+    draw_corridor_two_bends(level, level->rooms[2].doors[2].loc.x,
                                     level->rooms[2].doors[2].loc.y,
                                     level->rooms[6].doors[2].loc.x,
                                     level->rooms[6].doors[2].loc.y, 2);                                
@@ -289,8 +308,36 @@ void add_doors_to_room(int i, Room *room, int mode) {
     }
 }
 
-void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int level_num){
-    // O: obstacle/ X: Trap
+/*colors
+# : ORANGE_TEXT
+
+if(r->type == 1) color_id = PURPLE_TEXT;
+
+if(level_num == 3 && r->type == 2){
+    color_id = YELLOW_TEXT;
+}
+X : RED_TEXT
+// gold
+draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", YELLOW_TEXT);
+draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", BLACK_TEXT);
+// foods
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", LIGHT_GREEN_TEXT);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", CYAN_TEXT);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", LIGHT_YELLOW_TEXT);
+draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299", RED_TEXT);
+// enchents
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695", PINK_TEXT);
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7", PINK_TEXT);
+draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620", PINK_TEXT);
+//weapon
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔", WHITE_TEXT);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄", WHITE_TEXT);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳", WHITE_TEXT);
+draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡", WHITE_TEXT);
+
+*/
+
+void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
     
     Level* level = &map->main_levels[level_num];
     
@@ -310,49 +357,47 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
             level->rooms[7].type = 1;
             break;
     }
-    
     // Golden room
-    int golden_room_i = find_good_id_for_room(map, level_num);
-    level->rooms[golden_room_i].type = 2;
+    int golden_room_i;
+    if(level_num == 3){
+        golden_room_i = find_good_id_for_room(map, level_num);
+        level->rooms[golden_room_i].type = 2;
+    }
 
     // for each room
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
         int color_id = WHITE_TEXT;
-        if(r->type == 1) color_id = PURPLE_TEXT;
-
-        if(level_num == 3 && r->type == 2){
-            color_id = YELLOW_TEXT;
-        }
         
-        putch_map(win, level, r->e1.y, r->e1.x, '.', color_id);
-        putch_map(win, level, r->e2.y, r->e2.x, '.', color_id);
-        putch_map(win, level, r->e3.y, r->e3.x, '|', color_id);
-        putch_map(win, level, r->e4.y, r->e4.x, '|', color_id);
+        
+        putch_map(level, r->e1.y, r->e1.x, '.');
+        putch_map(level, r->e2.y, r->e2.x, '.');
+        putch_map(level, r->e3.y, r->e3.x, '|');
+        putch_map(level, r->e4.y, r->e4.x, '|');
 
         for (int j = r->e1.x + 1; j < r->e2.x; j++){
-            putch_map(win, level, r->e1.y, j, '_', color_id);
-            putch_map(win, level, r->e4.y, j, '_', color_id);
+            putch_map(level, r->e1.y, j, '_');
+            putch_map(level, r->e4.y, j, '_');
         }
         for (int j = r->e1.y + 1; j < r->e3.y; j++){
-            putch_map(win, level, j, r->e1.x, '|', color_id);
-            putch_map(win, level, j, r->e4.x, '|', color_id);
+            putch_map(level, j, r->e1.x, '|');
+            putch_map(level, j, r->e4.x, '|');
         }
         for (int j = r->e1.y + 1; j < r->e3.y; j++){
             for (int z = r->e1.x + 1; z < r->e2.x; z++){
-                putch_map(win, level, j, z, '.', color_id);
+                putch_map(level, j, z, '.');
             }
         }
         
         // //window
         // r->window.x = rand_in(r->e1.x + 1, r->e2.x - 1);
         // r->window.y = (rand() % 2 == 0) ? r->e1.y : r->e4.y;
-        // putch_map(win, level, r->window.y, r->window.x, '=');
+        // putch_map(level, r->window.y, r->window.x, '=');
 
         add_doors_to_room(i,r, level->mode);
     }
-    connect_door_pairs(win, level);
-    
+    connect_door_pairs(level);
+
     // for each room
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
@@ -363,9 +408,9 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
         for (int d = 0; d < 4; d++){
             if (r->doors[d].loc.x > 0 && r->doors[d].loc.y > 0){
                 if(r->doors[d].type == 1){
-                    putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '?', color_id);
+                    putch_map(level, r->doors[d].loc.y, r->doors[d].loc.x, '?');
                 } else{
-                    putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '+', color_id);
+                    putch_map(level, r->doors[d].loc.y, r->doors[d].loc.x, '+');
                 }
             }
         }
@@ -373,8 +418,7 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
         //O
         r->O.x = rand_in(r->e1.x + 2, r->e2.x - 2);
         r->O.y = rand_in(r->e1.y + 2, r->e4.y - 2);
-        putch_map(win, level, r->O.y, r->O.x, 'O', color_id);
-        
+        putch_map(level, r->O.y, r->O.x, 'O');
         // trap (hidden)
         int traps_num;
         if(r->type == 0){
@@ -388,7 +432,7 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
         for(int j = 0; j < traps_num; j ++){
             r->traps[j].loc = find_empty_place_room(*level, *r, 2);
             r->traps->visible = FALSE;
-            putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'X', RED_TEXT);
+            putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'X');
         }
         // golds
         int golds_num, rand_num;
@@ -405,11 +449,10 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
             rand_num = rand_in(1, 10);
             if(rand_num <= 8){
                 r->golds[j].type = 0;
-                put_icon_map(win, level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2",  YELLOW_TEXT);
             } else{
                 r->golds[j].type = 1;
-                put_icon_map(win, level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2",  BLACK_TEXT);
             }
+            putch_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$');
         } 
 
         // foods
@@ -428,25 +471,22 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
                 r->foods[j].type = 0;
                 r->foods[j].HP = 100;
                 r->foods[j].time = 10;
-                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  LIGHT_GREEN_TEXT);
             } else if (rand_num <= 65){ //magic
                 r->foods[j].type = 1;
                 r->foods[j].HP = 50;
                 r->foods[j].speed = 20;
                 r->foods[j].time = 20;
-                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  CYAN_TEXT);
             }else if (rand_num <= 80){ // perfect
                 r->foods[j].type = 2;
                 r->foods[j].HP = 50;
                 r->foods[j].power = 20;
                 r->foods[j].time = 15;
-                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  YELLOW_TEXT);
             } else { // Bad
                 r->foods[j].type = 3;
                 r->foods[j].HP = -50;
                 r->foods[j].time = 0;
-                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  RED_TEXT);
             }
+            putch_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'F');
         } 
 
         // enchants
@@ -459,17 +499,15 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
                 if (rand_num == 0){
                     r->enchants[j].type = 0;
                     r->enchants[j].HP_regen = 12;
-                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695",  PINK_TEXT);
                 } else if (rand_num == 1){
                     r->enchants[j].type = 1;
                     r->enchants[j].speed = 2;
-                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7",  PINK_TEXT);
                 } else if (rand_num == 2){
                     r->enchants[j].type = 2;
                     r->enchants[j].power = 2;
-                    put_icon_map(win, level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620",  PINK_TEXT);
                 }
                 r->enchants[j].time = 10;
+                putch_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E');
             }
 
         }
@@ -484,22 +522,18 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
                 r->weapons[j].type = 1;
                 r->weapons[j].num = 10;
                 r->weapons[j].damage = 12;
-                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔",  WHITE_TEXT);
             }else if (rand_num == 2){
                 r->weapons[j].type = 2;
                 r->weapons[j].num = 8;
                 r->weapons[j].damage = 15;
-                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄",  WHITE_TEXT);
             } else if (rand_num == 3){
                 r->weapons[j].type = 3;
                 r->weapons[j].num = 5;
                 r->weapons[j].damage = 5;
-                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳",  WHITE_TEXT);
             } else {
                 r->weapons[j].type = 4;
                 r->weapons[j].num = 1;
                 r->weapons[j].damage = 10;
-                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡",  WHITE_TEXT);
             }
 
         }
@@ -517,31 +551,31 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
                 g->enemys[j].damage = 5;
                 g->enemys[j].hp = 5;
                 g->enemys[j].possible_moves = 0;
-                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'D', ORANGE_TEXT);
+                putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'D');
             }else if (rand_num == 1){
                 g->enemys[j].type = 1;
                 g->enemys[j].damage = 5;
                 g->enemys[j].hp = 10;
                 g->enemys[j].possible_moves = 0;
-                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'F', ORANGE_TEXT);
+                putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'F');
             } else if (rand_num == 2){
                 g->enemys[j].type = 2;
                 g->enemys[j].damage = 5;
                 g->enemys[j].hp = 15;
                 g->enemys[j].possible_moves = 5;
-                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'G', ORANGE_TEXT);
+                putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'G');
             }else if (rand_num == 3){
                 g->enemys[j].type = 3;
                 g->enemys[j].damage = 5;
                 g->enemys[j].hp = 20;
                 g->enemys[j].possible_moves = 1000;
-                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'S', ORANGE_TEXT);
+                putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'S');
             } else {
                 g->enemys[j].type = 4;
                 g->enemys[j].damage = 5;
                 g->enemys[j].hp = 30;
                 g->enemys[j].possible_moves = 5;
-                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'U', ORANGE_TEXT);
+                putch_map(level, r->traps[j].loc.y, r->traps[j].loc.x, 'U');
             }
             
         }
@@ -565,7 +599,7 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
     stair->level_num = level->number;
     stair->loc = find_empty_place_room(*level, *t_room,1);
     stair->is_down = TRUE;
-    putch_map(win, level, stair->loc.y, stair->loc.x, '>', color_id);
+    putch_map(level, stair->loc.y, stair->loc.x, '>');
 
 
     // // To up
@@ -576,22 +610,12 @@ void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int 
         Room* last_room = map->main_levels[level_num - 1].rooms;
         stair_up->loc = map->main_levels[level_num - 1].stairs[0].loc;
         
-        putch_map(win, level, stair_up->loc.y, stair_up->loc.x, '<', GREEN_TEXT_WHITE);
+        putch_map(level, stair_up->loc.y, stair_up->loc.x, '<');
     }
-    wrefresh(win);
 }
 
 void make_random_map(Game* g){
     int width = g->map->width, height = g->map->height;
-
-    int x_w = 1;
-    int y_w = LINES/2 - height/2;
-
-    WINDOW* main_game = newwin(height, width, y_w, x_w);
-    
-    refresh();
-    box(main_game, 0, 0);
-    wrefresh(main_game);
     // setting rooms & Levels
     
     // For each level
@@ -619,13 +643,52 @@ void make_random_map(Game* g){
             
         }
         
-        draw_rooms_and_corridors(g, main_game, height, width, g->map, j);
-        getch();
-        wclear(main_game);
+        make_rooms_and_corridors(g, height, width, g->map, j);
     }
+}
 
+void draw_game_map(Game *g, WINDOW* win, int level_num){
+    Level* level = &g->map->main_levels[level_num];
+    char** map = level->map;
+    int height = g->map->height, width = g->map->width;
 
-    delwin(main_game);
+    for(int j = 1; j < height - 1; j++){
+        for(int i = 1; i < width - 1; i++){
+            char letter[5];
+            int color_id;
+
+            if(map[j][i] == ' ') continue;
+            if(map[j][i] == '#') draw_in_map(win, j, i, "#", ORANGE_TEXT);
+        }
+    }
+    
+    for(int z = 0; z < level->rooms_num; z++){
+        Room* r = &level->rooms[z];
+        int color_id = WHITE_TEXT;
+        if(r->type == 1) color_id = PURPLE_TEXT;
+        if(r->type == 2) color_id = YELLOW_TEXT;
+        for(int j = r->e1.y; j <= r->e4.y; j++){
+            for(int i = r->e1.x; i <= r->e4.x; i++){
+                char ch[2];
+                ch[0] = map[j][i];
+                ch[1] = '\0';
+                switch(*ch){
+                    case 'X':
+                        draw_in_map(win, j, i, ch, RED_TEXT);
+                        break;
+                    case '$':
+                        Gold* gold = get_gold_by_room(r, i, j);
+                        int color;
+                        if(gold->type == 0) color = YELLOW_TEXT;
+                        if(gold->type == 1) color = BLACK_TEXT;
+                        draw_in_map(win, j, i, ch, color);
+                        break;
+                    default:
+                        draw_in_map(win, j, i, ch, color_id);
+                }
+            }
+        }
+    }
 }
 
 void free_game(Game* g) {
@@ -691,10 +754,11 @@ void load_main_game(Game* g){
     clear();
     start_color();
     game_initalize();
-    
+
     Player player;
-    player.level = 1;
+    player.level = 0;
     player.hp = 100;
+    player.regen = 5;
     player.hungriness = 0;
     player.points = 0;
     player.golds = 0;
@@ -705,11 +769,23 @@ void load_main_game(Game* g){
     g->player = player;
     initialize_map(g);
     make_random_map(g);
+    
+    int width = g->map->width, height = g->map->height;
+    int x_w = 1;
+    int y_w = LINES/2 - height/2;
+
+    WINDOW* main_game = newwin(height, width, y_w, x_w);
+    
+
+    draw_game_map(g, main_game, player.level);
+    
+    refresh();
+    box(main_game, 0, 0);
+    wrefresh(main_game);
 
     g->player.now_loc.x = g->map->main_levels[0].rooms[0].e1.x + 1;
     g->player.now_loc.y = g->map->main_levels[0].rooms[0].e1.y + 1;
-
-    free_game(g);
+    getch();
     // while(1){
         
     //         // handle key -> move->f,g,orib?/menus->food(E), /map show(M)/quit menu(Q)
@@ -719,4 +795,6 @@ void load_main_game(Game* g){
     //         // show visited parts
     //         // show visible area (if in corridor)
     // }
+    delwin(main_game);
+    free_game(g);
 }
