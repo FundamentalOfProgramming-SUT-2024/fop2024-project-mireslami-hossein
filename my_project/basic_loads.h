@@ -154,6 +154,8 @@ typedef struct
     int rooms_num;
 
     int stair_room_index;
+    Stair stairs[2];
+
     int mode;
 } Level;
 
