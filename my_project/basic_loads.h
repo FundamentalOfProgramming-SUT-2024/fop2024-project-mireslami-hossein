@@ -22,7 +22,9 @@ enum CustomColors {
     CUSTOM_GREEN,
     CUSTOM_ORANGE,
     CUSTOM_ORANGE_2,
-    CUSTOM_YELLOW
+    CUSTOM_YELLOW,
+    CUSTOM_BLACK,
+    CUSTOM_LIGHT_GREEN
 };
 
 
@@ -45,7 +47,10 @@ enum ColorPairs {
     CYAN_TEXT,
     ORANGE_TEXT,
     YELLOW_TEXT,
-    PURPLE_TEXT
+    PURPLE_TEXT,
+    RED_TEXT,
+    BLACK_TEXT,
+    LIGHT_GREEN_TEXT
 };
 
 // Structs
@@ -75,34 +80,44 @@ typedef struct {
 
 typedef struct 
 {
-    int type;
+    int type; // 0: health, 1:speed, 2:damage
+    int HP_regen;
+    int speed;
+    int power; // power: 2 means two times damage
+    
+    int time; //10 at first
     Loc loc;
 } Enchant;
 
 typedef struct 
 {
-    int type; //type: 0: common, 1: magic, 2: perfect, -1: Bad
+    int type; //type: 0: common, 1: magic, 2: perfect, 3: Bad
     int HP;
+    int speed;
+    int power;
+
+    int time; //20: magic, 15: perfect, 10: common, 0: bad
     Loc loc;
 } Food;
 
 typedef struct 
 {
-    int type; //type: 0: common, 1: hidden, 2: pass
     Loc loc;
     bool visible;
 } Trap;
 
 typedef struct 
 {
-    int type; //type: 0: common, 1: 
+    int type; //type: 0: mace, 1: dagger, 2: magic wood, 3: normal arrow, 4: sword
     int num;
+    int damage;
     Loc loc;
 } Weapon;
 
 typedef struct 
 {
     int type; //type: 0: common, 1: black
+    int num;
     Loc loc;
 } Gold;
 
@@ -112,11 +127,7 @@ typedef struct
     Loc loc;
 } Door;
 
-// typedef struct {
-//     bool is_hidden;
-//     int points_count;
-//     Loc* points;
-// } Corridor;
+
 
 typedef struct 
 {
@@ -124,6 +135,14 @@ typedef struct
     int level_num;
     bool is_down; // TRUE: down, FALSE: Up
 } Stair;
+
+typedef struct {
+    Loc loc;
+    int type; // 0: Demon, 1: Fire breathing monster, 2: Giant, 3: Snake, 4: Undeed
+    int hp;
+    int damage;
+    int possible_moves;
+} Enemy;
 
 typedef struct 
 {
@@ -137,6 +156,7 @@ typedef struct
     Loc window;
 
     Loc O;
+    Trap traps[25];
     Food foods[10];
     Gold golds[10];
     Weapon weapons[5];
@@ -172,24 +192,24 @@ typedef struct
 typedef struct {
     Loc now_loc;
     int hp;
+    int regen;
     int hungriness;
     int level;
     Food foods[5];
-    // Weapon weapons[];
-} Player;
+    Weapon weapons[5];
+    Weapon hand_weapon;
+    Enchant enchants[5];
 
-typedef struct {
-    char name[MAX_USERNAME];
-    int hp;
-    int type;
-} Enemy;
+    int points;
+    int golds;
+} Player;
 
 
 typedef struct{
     int hardness;
     Map* map;
     User* user;
-    
+    Enemy enemys[30];
     Player player;
 } Game;
 
@@ -519,6 +539,8 @@ void game_initalize(){
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
     add_color_rgb(CUSTOM_ORANGE_2, 175, 122, 0);
     add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
+    add_color_rgb(CUSTOM_BLACK, 61, 42, 0);
+    add_color_rgb(CUSTOM_LIGHT_GREEN, 79, 176, 23);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
     init_pair(BTN_DEFAULT, COLOR_CYAN, COLOR_BLACK);
@@ -538,6 +560,9 @@ void game_initalize(){
     init_pair(ORANGE_TEXT, CUSTOM_ORANGE_2 , COLOR_BLACK);
     init_pair(YELLOW_TEXT, CUSTOM_YELLOW , COLOR_BLACK);
     init_pair(PURPLE_TEXT, COLOR_PURPLE , COLOR_BLACK);
+    init_pair(RED_TEXT, COLOR_RED , COLOR_BLACK);
+    init_pair(BLACK_TEXT, CUSTOM_BLACK , COLOR_BLACK);
+    init_pair(LIGHT_GREEN_TEXT, CUSTOM_LIGHT_GREEN , COLOR_BLACK);
 
     srand(time(NULL));
 }

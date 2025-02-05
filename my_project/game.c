@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #include "cjson/cJSON.h"
 #include <regex.h>
 #include <time.h>
 
 #include "basic_loads.h"
+
 // کمکی
 bool is_empty_room(Level level, Room room, Loc loc){
     // mvaddch(1,1, level.map[loc.y][loc.x]);
@@ -18,23 +19,30 @@ bool is_empty_room(Level level, Room room, Loc loc){
     return FALSE;
 }
 
-Loc find_empty_place_room(Level level, Room room){
+Loc find_empty_place_room(Level level, Room room, int padding){
     Loc res;
-    int c = (room.e4.x - room.e1.x) * (room.e4.y - room.e1.y);
+    int c = (room.e4.x - room.e1.x - 2*padding) * (room.e4.y - room.e1.y - 2*padding);
     while(c > 0){
-        res.x = rand_in(room.e1.x+1, room.e4.x-1);
-        res.y = rand_in(room.e1.y+1, room.e4.y-1);
+        res.x = rand_in(room.e1.x+padding, room.e4.x-padding);
+        res.y = rand_in(room.e1.y+padding, room.e4.y-padding);
         c--;
         if(is_empty_room(level, room, res)) return res;
     }
-    res.x = rand_in(room.e1.x+1, room.e4.x-1);
-    res.y = rand_in(room.e1.y+1, room.e4.y-1);
-    return res;
+    // res.x = rand_in(room.e1.x+1, room.e4.x-1);
+    // res.y = rand_in(room.e1.y+1, room.e4.y-1);
+    // return res;
 }
 
 void putch_map(WINDOW* win, Level* level, int y, int x, char ch, int color) {
     wattron(win, COLOR_PAIR(color));
     mvwaddch(win, y, x, ch);
+    level->map[y][x] = ch;
+    wattroff(win, COLOR_PAIR(color));
+}
+
+void put_icon_map(WINDOW* win, Level* level, int y, int x, char ch, char* icon, int color){
+    wattron(win, COLOR_PAIR(color));
+    mvwaddstr(win, y, x, icon);
     level->map[y][x] = ch;
     wattroff(win, COLOR_PAIR(color));
 }
@@ -104,6 +112,22 @@ void set_room(Room *room, int e1_x, int e1_y, int w, int h){
     room->window.x = room->window.y = 0;
     room->O.x = room->O.y = 0;
     room->is_visited = false;
+}
+
+int find_good_id_for_room(Map* map, int level_num){
+    Level* level = &map->main_levels[level_num];
+    int res;
+    if(level_num == 0){
+        res = rand_in(1, level->rooms_num - 1);
+    } else{
+        // بررسی برای اینکه پله بالا و پایین کنار هم نباشن
+        res = rand_in(0, level->rooms_num - 1);
+        int pre_stair_room_i = map->main_levels[level_num - 1].stair_room_index;
+        if(res == pre_stair_room_i){
+            res = pre_stair_room_i - 1 < 0 ? 7 : res - 1;
+        }
+    }
+    return res;
 }
 
 // تابع اصلی
@@ -265,24 +289,42 @@ void add_doors_to_room(int i, Room *room, int mode) {
     }
 }
 
-void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num){
-    // for each room
+void draw_rooms_and_corridors(Game* g, WINDOW* win, int h, int w, Map* map, int level_num){
+    // O: obstacle/ X: Trap
+    
     Level* level = &map->main_levels[level_num];
     
-    level->mode = rand_in(1,5); //mode 1: none hidden / mode 2: 2 anchent / mode 3: 5 anchent
+    level->mode = rand_in(2,5); //mode 1: none hidden / mode 2: 2 anchent / mode 3: 5 anchent
                                 // mode 4: 6 / mode 5: 7
+    switch(level->mode){
+        case 2:
+            level->rooms[2].type = 1;
+            break;
+        case 3:
+            level->rooms[5].type = 1;
+            break;
+        case 4:
+            level->rooms[6].type = 1;
+            break;
+        case 5:
+            level->rooms[7].type = 1;
+            break;
+    }
+    
+    // Golden room
+    int golden_room_i = find_good_id_for_room(map, level_num);
+    level->rooms[golden_room_i].type = 2;
+
+    // for each room
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
         int color_id = WHITE_TEXT;
-        if(level->mode == 2 && i == 2){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 3 && i == 5){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 4 && i == 6){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 5 && i == 7){
-            color_id = PURPLE_TEXT;
+        if(r->type == 1) color_id = PURPLE_TEXT;
+
+        if(level_num == 3 && r->type == 2){
+            color_id = YELLOW_TEXT;
         }
+        
         putch_map(win, level, r->e1.y, r->e1.x, '.', color_id);
         putch_map(win, level, r->e2.y, r->e2.x, '.', color_id);
         putch_map(win, level, r->e3.y, r->e3.x, '|', color_id);
@@ -298,7 +340,7 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num
         }
         for (int j = r->e1.y + 1; j < r->e3.y; j++){
             for (int z = r->e1.x + 1; z < r->e2.x; z++){
-                putch_map(win, level, j, z, '.', GREEN_TEXT);
+                putch_map(win, level, j, z, '.', color_id);
             }
         }
         
@@ -306,7 +348,6 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num
         // r->window.x = rand_in(r->e1.x + 1, r->e2.x - 1);
         // r->window.y = (rand() % 2 == 0) ? r->e1.y : r->e4.y;
         // putch_map(win, level, r->window.y, r->window.x, '=');
-
 
         add_doors_to_room(i,r, level->mode);
     }
@@ -317,15 +358,7 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num
         Room *r = &level->rooms[i];
         // adding doors
         int color_id = WHITE_TEXT;
-        if(level->mode == 2 && i == 2){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 3 && i == 5){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 4 && i == 6){
-            color_id = PURPLE_TEXT;
-        }else if(level->mode == 5 && i == 7){
-            color_id = PURPLE_TEXT;
-        }
+        if(r->type == 1) color_id = PURPLE_TEXT;
         
         for (int d = 0; d < 4; d++){
             if (r->doors[d].loc.x > 0 && r->doors[d].loc.y > 0){
@@ -340,39 +373,179 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num
         //O
         r->O.x = rand_in(r->e1.x + 2, r->e2.x - 2);
         r->O.y = rand_in(r->e1.y + 2, r->e4.y - 2);
-        putch_map(win, level, r->O.y, r->O.x, 'O', GREEN_TEXT);
+        putch_map(win, level, r->O.y, r->O.x, 'O', color_id);
         
+        // trap (hidden)
+        int traps_num;
+        if(r->type == 0){
+            traps_num = rand_in(1 + r->w/5 + r->h/5, 3 + r->w/5 + r->h/5);
+        } else if (r -> type == 1){
+            traps_num = rand_in(0 + r->w/5 + r->h/5, 1 + r->w/5 + r->h/5);
+        } else if(r -> type == 2){
+            traps_num = rand_in(4, 6 + r->w/5 + r->h/5);
+        }
+        
+        for(int j = 0; j < traps_num; j ++){
+            r->traps[j].loc = find_empty_place_room(*level, *r, 2);
+            r->traps->visible = FALSE;
+            putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'X', RED_TEXT);
+        }
+        // golds
+        int golds_num, rand_num;
+        if(r->type == 0){
+            golds_num = rand_in(1 + r->w/5 + r->h/5, 3 + r->w/5 + r->h/5);
+            
+        } else if (r -> type == 1){
+            golds_num = rand_in(1 + r->w/5 + r->h/5, 3 + r->w/5 + r->h/5);
+        } else if(r -> type == 2){
+            golds_num = rand_in(2, 3 + r->w/5 + r->h/5);
+        }
+        for(int j = 0; j < golds_num; j ++){
+            r->golds[j].loc = find_empty_place_room(*level, *r, 1);
+            rand_num = rand_in(1, 10);
+            if(rand_num <= 8){
+                r->golds[j].type = 0;
+                put_icon_map(win, level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2",  YELLOW_TEXT);
+            } else{
+                r->golds[j].type = 1;
+                put_icon_map(win, level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2",  BLACK_TEXT);
+            }
+        } 
+
+        // foods
+        int foods_num;
+        if(r->type == 0){
+            foods_num = rand_in(0 + r->w/7 + r->h/10, 1 + r->w/7 + r->h/10);
+        } else if (r -> type == 1){
+            foods_num = rand_in(0 + r->w/7 + r->h/10, 1 + r->w/7 + r->h/10);
+        } else if(r -> type == 2){
+            foods_num = 1;
+        }
+        for(int j = 0; j < foods_num; j ++){
+            r->foods[j].loc = find_empty_place_room(*level, *r, 1);
+            rand_num = rand_in(1, 100);
+            if(rand_num <= 50){ // common
+                r->foods[j].type = 0;
+                r->foods[j].HP = 100;
+                r->foods[j].time = 10;
+                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  LIGHT_GREEN_TEXT);
+            } else if (rand_num <= 65){ //magic
+                r->foods[j].type = 1;
+                r->foods[j].HP = 50;
+                r->foods[j].speed = 20;
+                r->foods[j].time = 20;
+                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  CYAN_TEXT);
+            }else if (rand_num <= 80){ // perfect
+                r->foods[j].type = 2;
+                r->foods[j].HP = 50;
+                r->foods[j].power = 20;
+                r->foods[j].time = 15;
+                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  YELLOW_TEXT);
+            } else { // Bad
+                r->foods[j].type = 3;
+                r->foods[j].HP = -50;
+                r->foods[j].time = 0;
+                put_icon_map(win, level, r->foods[j].loc.y, r->foods[j].loc.x, 'F', "\u2299",  RED_TEXT);
+            }
+        } 
+        // enchants
+
+
+        // weapons
+        int weapons_num = rand_in(0, 1 + r->w/7 + r->h/7);
+        
+        for(int j = 0; j < weapons_num; j ++){
+            r->weapons[j].loc = find_empty_place_room(*level, *r, 1);
+            rand_num = rand_in(1, 4);
+            if (rand_num == 1){
+                r->weapons[j].type = 1;
+                r->weapons[j].num = 10;
+                r->weapons[j].damage = 12;
+                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔",  WHITE_TEXT);
+            }else if (rand_num == 2){
+                r->weapons[j].type = 2;
+                r->weapons[j].num = 8;
+                r->weapons[j].damage = 15;
+                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄",  WHITE_TEXT);
+            } else if (rand_num == 3){
+                r->weapons[j].type = 3;
+                r->weapons[j].num = 5;
+                r->weapons[j].damage = 5;
+                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳",  WHITE_TEXT);
+            } else {
+                r->weapons[j].type = 4;
+                r->weapons[j].num = 1;
+                r->weapons[j].damage = 10;
+                put_icon_map(win, level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡",  WHITE_TEXT);
+            }
+
+        }
+        // enenmies
+        int enemy_num = rand_in(0, 1 + r->w/7 + r->h/7);
+        if(r->type == 2){
+            enemy_num = rand_in(4, 4 + r->w/7 + r->h/7);
+        }
+        for(int j = 0; j < enemy_num; j ++){
+            g->enemys[j].loc = find_empty_place_room(*level, *r, 1);
+
+            rand_num = rand_in(0, 4);
+            if (rand_num == 0){
+                g->enemys[j].type = 0;
+                g->enemys[j].damage = 5;
+                g->enemys[j].hp = 5;
+                g->enemys[j].possible_moves = 0;
+                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'D', ORANGE_TEXT);
+            }else if (rand_num == 1){
+                g->enemys[j].type = 1;
+                g->enemys[j].damage = 5;
+                g->enemys[j].hp = 10;
+                g->enemys[j].possible_moves = 0;
+                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'F', ORANGE_TEXT);
+            } else if (rand_num == 2){
+                g->enemys[j].type = 2;
+                g->enemys[j].damage = 5;
+                g->enemys[j].hp = 15;
+                g->enemys[j].possible_moves = 5;
+                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'G', ORANGE_TEXT);
+            }else if (rand_num == 3){
+                g->enemys[j].type = 3;
+                g->enemys[j].damage = 5;
+                g->enemys[j].hp = 20;
+                g->enemys[j].possible_moves = 1000;
+                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'S', ORANGE_TEXT);
+            } else {
+                g->enemys[j].type = 4;
+                g->enemys[j].damage = 5;
+                g->enemys[j].hp = 30;
+                g->enemys[j].possible_moves = 5;
+                putch_map(win, level, r->traps[j].loc.y, r->traps[j].loc.x, 'U', ORANGE_TEXT);
+            }
+            
+        }
     }
 
     // Stair
-    int stair_room_index;
-    if(level_num == 0){
-        stair_room_index = rand_in(1, level->rooms_num - 1);
-    } else{
-        // بررسی برای اینکه پله بالا و پایین کنار هم نباشن
-        stair_room_index = rand_in(0, level->rooms_num - 1);
-        int pre_stair_room_i = map->main_levels[level_num - 1].stair_room_index;
-        if(stair_room_index == pre_stair_room_i){
-            stair_room_index = pre_stair_room_i - 1 < 0 ? 7 : stair_room_index - 1;
-        }
-    }
+    // // To down   
     
+    int stair_room_index, color_id;
+    if(level_num == 3){
+        stair_room_index = golden_room_i;
+        color_id = GREEN_TEXT_YELLOW;
+    } else{
+        stair_room_index = find_good_id_for_room(map, level_num);
+        color_id = GREEN_TEXT_WHITE;
+    }
     level->stair_room_index = stair_room_index;
     Room* t_room = &level->rooms[stair_room_index];
-
+    
     Stair* stair = &level->stairs[0];
     stair->level_num = level->number;
-    stair->loc = find_empty_place_room(*level, *t_room);
+    stair->loc = find_empty_place_room(*level, *t_room,1);
     stair->is_down = TRUE;
-    
-    
-    
-    if(level_num == 3){
-        putch_map(win, level, stair->loc.y, stair->loc.x, '>', GREEN_TEXT_YELLOW);
-    } else{
-        putch_map(win, level, stair->loc.y, stair->loc.x, '>', GREEN_TEXT_WHITE);
-    }
+    putch_map(win, level, stair->loc.y, stair->loc.x, '>', color_id);
 
+
+    // // To up
     if(level_num != 0){
         Stair* stair_up = &level->stairs[1];
         stair_up->is_down = FALSE;
@@ -382,11 +555,6 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int level_num
         
         putch_map(win, level, stair_up->loc.y, stair_up->loc.x, '<', GREEN_TEXT_WHITE);
     }
-    // trap (hidden)
-    // foods
-    // golds
-    // weapons
-    // enenmies
     wrefresh(win);
 }
 
@@ -413,8 +581,8 @@ void make_random_map(Game* g){
             int y_s = (height / 2) * (i / 4) + 1;
             int y_f = (height / 2) * ((i / 4) + 1) - 1;
             
-            int w_room = rand_in(7, 10);
-            int h_room = rand_in(5, 9);
+            int w_room = rand_in(10, 13);
+            int h_room = rand_in(7, 10);
             
             set_room(&map_rooms[i], rand_in(x_s, x_f - w_room - 1), rand_in(y_s, y_f - h_room - 1), w_room, h_room);
         }
@@ -428,7 +596,7 @@ void make_random_map(Game* g){
             
         }
         
-        draw_rooms_and_corridors(main_game, height, width, g->map, j);
+        draw_rooms_and_corridors(g, main_game, height, width, g->map, j);
         getch();
         wclear(main_game);
     }
@@ -443,11 +611,10 @@ void free_game(Game* g) {
 
     Map* map = g->map;
 
-    // آزادسازی حافظه مربوط به main_levels
+    
     for (int i = 0; i < map->levels_num; i++) {
         Level* level = &map->main_levels[i];
 
-        // آزادسازی حافظه مربوط به آرایه‌ی دو بعدی map (نقشه‌ی سطح)
         if (level->map != NULL) {
             for (int j = 0; j < map->height; j++) {
                 free(level->map[j]);
@@ -455,7 +622,6 @@ void free_game(Game* g) {
             free(level->map);
         }
 
-        // آزادسازی آرایه visited
         if (level->visited != NULL) {
             for (int j = 0; j < map->height; j++) {
                 free(level->visited[j]);
@@ -463,14 +629,13 @@ void free_game(Game* g) {
             free(level->visited);
         }
 
-        // آزادسازی آرایه اتاق‌ها (rooms)
         if (level->rooms != NULL) {
             free(level->rooms);
         }
     }
     free(map->main_levels);
 
-    // آزادسازی حافظه مربوط به visited_levels (در صورتی که به همان صورت تخصیص داده شده باشد)
+
     for (int i = 0; i < map->levels_num; i++) {
         Level* level = &map->visited_levels[i];
 
@@ -494,7 +659,6 @@ void free_game(Game* g) {
     }
     free(map->visited_levels);
 
-    // آزادسازی حافظه اختصاص‌یافته به ساختار Map
     free(map);
     g->map = NULL;
 }
@@ -502,7 +666,6 @@ void free_game(Game* g) {
 
 void load_main_game(Game* g){
     clear();
-
     start_color();
     game_initalize();
     
@@ -510,6 +673,9 @@ void load_main_game(Game* g){
     player.level = 1;
     player.hp = 100;
     player.hungriness = 0;
+    player.points = 0;
+    player.golds = 0;
+
     player.now_loc.x = 0;
     player.now_loc.y = 0;
 
@@ -525,7 +691,7 @@ void load_main_game(Game* g){
         
     //         // handle key -> move->f,g,orib?/menus->food(E), /map show(M)/quit menu(Q)
     //         // load player loc
-    //         // giving objects in this loc
+    //         // giving objects in this loc -> delete from map, add to player
             
     //         // show visited parts
     //         // show visible area (if in corridor)
