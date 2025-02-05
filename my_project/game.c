@@ -29,7 +29,7 @@ void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
     g->map = map;
     
-    int levels_num = 1;
+    int levels_num = 4;
     map->levels_num = levels_num;
     map->main_levels = (Level*)malloc(levels_num * sizeof(Level));
     map->visited_levels = (Level*)malloc(levels_num * sizeof(Level));
@@ -46,15 +46,16 @@ void initialize_map(Game* g){
             map->main_levels[i].map[j] = (char*)malloc(width * sizeof(char));
             map->main_levels[i].visited[j] = (int*)malloc(width * sizeof(int));
         }
-        map->main_levels[i].rooms_num = rand_in(7, 8);
+        map->main_levels[i].rooms_num = 8;
         
         Room* map_rooms = malloc(map->main_levels[i].rooms_num * sizeof(Room));
         map->main_levels[i].rooms = map_rooms;
     }
 }
 
+// کمکی
 void putch_map(WINDOW* win, Level* level, int y, int x, char ch) {
-    // mvwaddch(win, y, x, ch);
+    mvwaddch(win, y, x, ch);
     level->map[y][x] = ch;
 }
 
@@ -62,77 +63,62 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
     if(mode == 1){
         int mid_x = (x1 + x2) / 2;
 
-        int start_x = (x1 < mid_x) ? x1 : mid_x;
-        int end_x   = (x1 < mid_x) ? mid_x : x1;
+        int start_x = min(x1, mid_x);
+        int end_x   = max(x1, mid_x);
         
         for (int x = start_x; x <= end_x; x++) {
             putch_map(win, level, y1, x, '#');
         }
         
-        int start_y = (y1 < y2) ? y1 : y2;
-        int end_y   = (y1 < y2) ? y2 : y1;
+        int start_y = min(y1, y2);
+        int end_y   = max(y1, y2);
         for (int y = start_y; y <= end_y; y++) {
             putch_map(win, level, y, mid_x, '#');
         }
         
-        start_x = (mid_x < x2) ? mid_x : x2;
-        end_x   = (mid_x < x2) ? x2 : mid_x;
+        start_x = min(mid_x, x2);
+        end_x   = max(mid_x, x2);
         for (int x = start_x; x <= end_x; x++) {
             putch_map(win, level, y2, x, '#');
         }
     } else {
         int mid_y = (y1 + y2) / 2;
 
-        int start_y = (y1 < mid_y) ? y1 : mid_y;
-        int end_y   = (y1 < mid_y) ? mid_y : y1;
+        int start_y = min(y1, mid_y);
+        int end_y   = max(y1, mid_y);
         
         for (int y = start_y; y <= end_y; y++) {
             putch_map(win, level, y, x1, '#');
         }
         
-        int start_x = (x1 < x2) ? x1 : x2;
-        int end_x   = (x1 < x2) ? x2 : x1;
+        int start_x = min(x1, x2);
+        int end_x   = max(x1, x2);
         for (int x = start_x; x <= end_x; x++) {
             putch_map(win, level, mid_y, x, '#');
         }
         
-        start_y = (mid_y < y2) ? mid_y : y2;
-        end_y   = (mid_y < y2) ? y2 : mid_y;
+        start_y = min(mid_y, y2);
+        end_y   = max(mid_y, y2);
         for (int y = start_y; y <= end_y; y++) {
             putch_map(win, level, y, x2, '#');
         }
     }
 
     wrefresh(win);
-}
-
-void draw_corridor_one_bend(WINDOW *win, Level* level, int x1, int y1, int x2, int y2){
-    int start_x = min(x1, x2);
-    int end_x   = max(x1, x2);
-    
-    for (int x = start_x; x <= end_x; x++) {
-        putch_map(win, level, y1, x, '#');
-    }
-
-    int start_y = min(y1, y2);
-    int end_y   = max(y1, y2);
-    
-    for (int y = start_y; y <= end_y; y++) {
-        putch_map(win, level, y, end_x, '#');
-    }
-
-    wrefresh(win);
+    getch();
 }
 
 
+// تابع اصلی
 void connect_door_pairs(WINDOW *win, Level *level) {
+    // دوری
     for(int i = 0; i < 3; i++){
         draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
                                     level->rooms[i+1].doors[0].loc.y, 1);
     }
-    for(int i = 4; i < 6; i++){
+    for(int i = 4; i < 7; i++){
         draw_corridor_two_bends(win, level, level->rooms[i].doors[1].loc.x,
                                     level->rooms[i].doors[1].loc.y,
                                     level->rooms[i+1].doors[0].loc.x,
@@ -143,62 +129,89 @@ void connect_door_pairs(WINDOW *win, Level *level) {
                                     level->rooms[4].doors[0].loc.x,
                                     level->rooms[4].doors[0].loc.y, 2);
     
-    if(level->rooms_num == 8){
-        draw_corridor_two_bends(win, level, level->rooms[6].doors[1].loc.x,
-                                    level->rooms[6].doors[1].loc.y,
-                                    level->rooms[7].doors[0].loc.x,
-                                    level->rooms[7].doors[0].loc.y, 1);
-        
-        draw_corridor_two_bends(win, level, level->rooms[7].doors[1].loc.x,
-                                    level->rooms[7].doors[1].loc.y,
-                                    level->rooms[3].doors[1].loc.x,
-                                    level->rooms[3].doors[1].loc.y, 2);
-    } else{
-        draw_corridor_one_bend(win, level, level->rooms[6].doors[1].loc.x,
-                                    level->rooms[6].doors[1].loc.y,
-                                    level->rooms[3].doors[1].loc.x,
-                                    level->rooms[3].doors[1].loc.y);
-    }
+    draw_corridor_two_bends(win, level, level->rooms[7].doors[1].loc.x,
+                                level->rooms[7].doors[1].loc.y,
+                                level->rooms[3].doors[1].loc.x,
+                                level->rooms[3].doors[1].loc.y, 2);
 
+    // فرعی ها
+    draw_corridor_two_bends(win, level, level->rooms[1].doors[2].loc.x,
+                                    level->rooms[1].doors[2].loc.y,
+                                    level->rooms[5].doors[2].loc.x,
+                                    level->rooms[5].doors[2].loc.y, 2);
+    draw_corridor_two_bends(win, level, level->rooms[2].doors[2].loc.x,
+                                    level->rooms[2].doors[2].loc.y,
+                                    level->rooms[6].doors[2].loc.x,
+                                    level->rooms[6].doors[2].loc.y, 2);                                
 }
 
-void add_doors_to_room(int i, Room *room) {
-    if(i == 0){
-        room->doors[1].loc.x = room->e4.x;
-        room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+void add_doors_to_room(int i, Room *room, int mode) {
+    // اصلی ها
+    switch(i){
+        case 0:
+            room->doors[1].loc.x = room->e4.x;
+            room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
 
-        room->doors[0].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
-        room->doors[0].loc.y = room->e4.y;
-    } else if(i == 3){
-        room->doors[0].loc.x = room->e1.x;
-        room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+            room->doors[0].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
+            room->doors[0].loc.y = room->e4.y;
+            break;
+        case 3:
+            room->doors[0].loc.x = room->e1.x;
+            room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
 
-        room->doors[1].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
-        room->doors[1].loc.y = room->e4.y;
-    } else if (i == 4){
-        room->doors[1].loc.x = room->e4.x;
-        room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+            room->doors[1].loc.x = rand_in(room->e1.x + 3 ,room->e4.x -3);
+            room->doors[1].loc.y = room->e4.y;
+            break;
+        case 4:
+            room->doors[1].loc.x = room->e4.x;
+            room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
 
-        room->doors[0].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
-        room->doors[0].loc.y = room->e1.y;
-    } else if (i == 7){
-        room->doors[1].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
-        room->doors[1].loc.y = room->e1.y;
+            room->doors[0].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
+            room->doors[0].loc.y = room->e1.y;
+            break;
+        case 7:
+            room->doors[1].loc.x = rand_in(room->e1.x + 2 ,room->e4.x -2);
+            room->doors[1].loc.y = room->e1.y;
 
-        room->doors[0].loc.x = room->e1.x;
-        room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
-    } else {
-        room->doors[0].loc.x = room->e1.x;
-        room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+            room->doors[0].loc.x = room->e1.x;
+            room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+            break;
+        default:
+            room->doors[0].loc.x = room->e1.x;
+            room->doors[0].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
 
-        room->doors[1].loc.x = room->e2.x;
-        room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+            room->doors[1].loc.x = room->e2.x;
+            room->doors[1].loc.y = rand_in(room->e1.y + 2 ,room->e4.y -2);
+    }
+
+    // فرعی ها
+    switch(i){
+        case 1: case 2:
+            room->doors[2].loc.x = rand_in(room->e1.x + 2 ,room->e4.x - 2);
+            room->doors[2].loc.y = room->e4.y;
+            break;
+        // case 3:
+        //     room->doors[2].loc.x = room->e3.x + 1;
+        //     room->doors[2].loc.y = room->e4.y;
+        //     break;
+        case 5: case 6:
+            room->doors[2].loc.x = rand_in(room->e1.x + 2 ,room->e4.x - 2);
+            room->doors[2].loc.y = room->e1.y;
+            
+            // room->doors[3].loc.x = rand_in(room->e1.x + 3 ,room->e4.x - 3);
+            // room->doors[3].loc.y = room->e1.y;
+            break;
+        // case 6:
+        //     room->doors[2].loc.x = rand_in(room->e1.x + 3 ,room->e4.x - 2);
+        //     room->doors[2].loc.y = room->e1.y;
     }
 }
 
 void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
     // for each room
     Level* level = &map->main_levels[i];
+    
+    level->mode = rand_in(1,3); //mode 1: none hidden / mode 2: 2 hidden / mode 3: 3 hidden
 
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
@@ -228,12 +241,13 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
         // putch_map(win, level, r->window.y, r->window.x, '=');
 
 
-        add_doors_to_room(i,r);
+        add_doors_to_room(i,r, level->mode);
     }
     connect_door_pairs(win, level);
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
-        for (int d = 0; d < 3; d++){
+        // adding doors
+        for (int d = 0; d < 4; d++){
             if (r->doors[d].loc.x > 0 && r->doors[d].loc.y > 0)
                 putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '+');
         }
@@ -244,6 +258,7 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
         putch_map(win, level, r->O.y, r->O.x, 'O');
         
     }
+
     // Stair
     int room_num = rand_in(1, level->rooms_num);
     Room t_room = level->rooms[room_num];
@@ -269,38 +284,41 @@ void make_random_map(Game* g){
     box(main_game, 0, 0);
     wrefresh(main_game);
     // setting rooms & Levels
+    // For each level
     for(int j = 0; j < g->map->levels_num; j++){
-        int rooms_num = g->map->main_levels[j].rooms_num;
-        Room* map_rooms = g->map->main_levels[j].rooms;
-        for (int i = 0; i < rooms_num; i++){
-            int x_s = (width / 4) * (i % 4) + 1;
-            int x_f = (width / 4) * ((i % 4) + 1) - 1;
-            int y_s = (height / 2) * (i / 4) + 1;
-            int y_f = (height / 2) * ((i / 4) + 1) - 1;
+        if(j == 1){
+            int rooms_num = g->map->main_levels[j].rooms_num;
+            Room* map_rooms = g->map->main_levels[j].rooms;
+            for (int i = 0; i < rooms_num; i++){
+                int x_s = (width / 4) * (i % 4) + 1;
+                int x_f = (width / 4) * ((i % 4) + 1) - 1;
+                int y_s = (height / 2) * (i / 4) + 1;
+                int y_f = (height / 2) * ((i / 4) + 1) - 1;
+                
+                int w_room = rand_in(7, 10);
+                int h_room = rand_in(5, 9);
+                
+                map_rooms[i].e1.x = rand_in(x_s, x_f - w_room - 1);
+                map_rooms[i].e1.y = rand_in(y_s, y_f - h_room - 1);
+                map_rooms[i].w = w_room;
+                map_rooms[i].h = h_room;
+                
+                map_rooms[i].e2.x = map_rooms[i].e1.x + w_room;
+                map_rooms[i].e2.y = map_rooms[i].e1.y;
+                
+                map_rooms[i].e3.x = map_rooms[i].e1.x;
+                map_rooms[i].e3.y = map_rooms[i].e1.y + h_room;
+                
+                map_rooms[i].e4.x = map_rooms[i].e1.x + w_room;
+                map_rooms[i].e4.y = map_rooms[i].e1.y + h_room;
+                
+                map_rooms[i].window.x = map_rooms[i].window.y = 0;
+                map_rooms[i].O.x = map_rooms[i].O.y = 0;
+                map_rooms[i].is_visited = false;
+            }
             
-            int w_room = rand_in(7, 10);
-            int h_room = rand_in(5, 9);
-            
-            map_rooms[i].e1.x = rand_in(x_s, x_f - w_room - 1);
-            map_rooms[i].e1.y = rand_in(y_s, y_f - h_room - 1);
-            map_rooms[i].w = w_room;
-            map_rooms[i].h = h_room;
-            
-            map_rooms[i].e2.x = map_rooms[i].e1.x + w_room;
-            map_rooms[i].e2.y = map_rooms[i].e1.y;
-            
-            map_rooms[i].e3.x = map_rooms[i].e1.x;
-            map_rooms[i].e3.y = map_rooms[i].e1.y + h_room;
-            
-            map_rooms[i].e4.x = map_rooms[i].e1.x + w_room;
-            map_rooms[i].e4.y = map_rooms[i].e1.y + h_room;
-            
-            map_rooms[i].window.x = map_rooms[i].window.y = 0;
-            map_rooms[i].O.x = map_rooms[i].O.y = 0;
-            map_rooms[i].is_visited = false;
+            draw_rooms_and_corridors(main_game, height, width, g->map, j);
         }
-        
-        draw_rooms_and_corridors(main_game, height, width, g->map, j);
     }
 
     getch();
@@ -313,7 +331,9 @@ void load_main_game(Game* g){
 
     start_color();
     game_initalize();
+    
     Player player;
+    player.level = 1;
     player.hp = 100;
     player.hungriness = 0;
     player.now_loc.x = 0;

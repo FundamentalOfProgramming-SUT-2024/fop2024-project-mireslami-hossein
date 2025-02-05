@@ -66,7 +66,6 @@ typedef struct {
 
 } User;
 
-
 typedef struct 
 {
     int type;
@@ -106,6 +105,19 @@ typedef struct
     Loc loc;
 } Door;
 
+typedef struct {
+    bool is_hidden;
+    int points_count;
+    Loc* points;
+} Corridor;
+
+typedef struct 
+{
+    Loc loc;
+    int level_num;
+    bool is_down; // TRUE: down, FALSE: Up
+} Stair;
+
 typedef struct 
 {
     int type; //type: 0: common, 1: enchant, 2: treasure
@@ -114,7 +126,7 @@ typedef struct
     int w;
     int h;
     
-    Door doors[3];
+    Door doors[4];
     Loc window;
 
     Loc O;
@@ -125,11 +137,6 @@ typedef struct
     bool is_visited;
 } Room;
 
-typedef struct 
-{
-    Loc loc;
-    int level_num;
-} Stair;
 
 typedef struct 
 {
@@ -138,6 +145,8 @@ typedef struct
     int** visited;
     Room* rooms;
     int rooms_num;
+
+    int mode;
 } Level;
 
 typedef struct 
@@ -154,6 +163,7 @@ typedef struct {
     Loc now_loc;
     int hp;
     int hungriness;
+    int level;
     Food foods[5];
     // Weapon weapons[];
 } Player;
