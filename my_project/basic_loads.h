@@ -21,6 +21,7 @@ enum CustomColors {
     CUSTOM_CYAN,
     CUSTOM_GREEN,
     CUSTOM_ORANGE,
+    CUSTOM_ORANGE_2,
     CUSTOM_YELLOW
 };
 
@@ -36,9 +37,13 @@ enum ColorPairs {
     TEXT_COLOR,
     BTN_DEFAULT_2,
     BTN_SELECTED_2,
+    
     WHITE_TEXT,
     GREEN_TEXT,
-    CYAN_TEXT
+    CYAN_TEXT,
+    ORANGE_TEXT,
+    YELLOW_TEXT,
+    PURPLE_TEXT
 };
 
 // Structs
@@ -101,15 +106,15 @@ typedef struct
 
 typedef struct 
 {
-    int type; //type: 0: common, 1: hidden, 2: pass
+    int type; //type: 0: common, 1: hidden
     Loc loc;
 } Door;
 
-typedef struct {
-    bool is_hidden;
-    int points_count;
-    Loc* points;
-} Corridor;
+// typedef struct {
+//     bool is_hidden;
+//     int points_count;
+//     Loc* points;
+// } Corridor;
 
 typedef struct 
 {
@@ -507,6 +512,7 @@ void game_initalize(){
     add_color_rgb(CUSTOM_GREEN, 93, 255, 101);
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
+    add_color_rgb(CUSTOM_ORANGE_2, 175, 122, 0);
     add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
 
     init_pair(MESSAGE_COLOR, COLOR_RED, COLOR_BLACK);
@@ -522,6 +528,9 @@ void game_initalize(){
     init_pair(WHITE_TEXT, COLOR_WHITE , COLOR_BLACK);
     init_pair(GREEN_TEXT, COLOR_GREEN , COLOR_BLACK);
     init_pair(CYAN_TEXT, COLOR_CYAN , COLOR_BLACK);
+    init_pair(ORANGE_TEXT, CUSTOM_ORANGE_2 , COLOR_BLACK);
+    init_pair(YELLOW_TEXT, CUSTOM_YELLOW , COLOR_BLACK);
+    init_pair(PURPLE_TEXT, COLOR_PURPLE , COLOR_BLACK);
 
     srand(time(NULL));
 }

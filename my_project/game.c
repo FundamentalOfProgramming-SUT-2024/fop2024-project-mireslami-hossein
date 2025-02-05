@@ -54,9 +54,11 @@ void initialize_map(Game* g){
 }
 
 // کمکی
-void putch_map(WINDOW* win, Level* level, int y, int x, char ch) {
+void putch_map(WINDOW* win, Level* level, int y, int x, char ch, int color) {
+    wattron(win, COLOR_PAIR(color));
     mvwaddch(win, y, x, ch);
     level->map[y][x] = ch;
+    wattroff(win, COLOR_PAIR(color));
 }
 
 void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, int y2, int mode) {
@@ -67,19 +69,19 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
         int end_x   = max(x1, mid_x);
         
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, y1, x, '#');
+            putch_map(win, level, y1, x, '#', ORANGE_TEXT);
         }
         
         int start_y = min(y1, y2);
         int end_y   = max(y1, y2);
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, mid_x, '#');
+            putch_map(win, level, y, mid_x, '#', ORANGE_TEXT);
         }
         
         start_x = min(mid_x, x2);
         end_x   = max(mid_x, x2);
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, y2, x, '#');
+            putch_map(win, level, y2, x, '#', ORANGE_TEXT);
         }
     } else {
         int mid_y = (y1 + y2) / 2;
@@ -88,24 +90,23 @@ void draw_corridor_two_bends(WINDOW *win, Level* level, int x1, int y1, int x2, 
         int end_y   = max(y1, mid_y);
         
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, x1, '#');
+            putch_map(win, level, y, x1, '#', ORANGE_TEXT);
         }
         
         int start_x = min(x1, x2);
         int end_x   = max(x1, x2);
         for (int x = start_x; x <= end_x; x++) {
-            putch_map(win, level, mid_y, x, '#');
+            putch_map(win, level, mid_y, x, '#', ORANGE_TEXT);
         }
         
         start_y = min(mid_y, y2);
         end_y   = max(mid_y, y2);
         for (int y = start_y; y <= end_y; y++) {
-            putch_map(win, level, y, x2, '#');
+            putch_map(win, level, y, x2, '#', ORANGE_TEXT);
         }
     }
 
     wrefresh(win);
-    getch();
 }
 
 
@@ -205,33 +206,83 @@ void add_doors_to_room(int i, Room *room, int mode) {
         //     room->doors[2].loc.x = rand_in(room->e1.x + 3 ,room->e4.x - 2);
         //     room->doors[2].loc.y = room->e1.y;
     }
+    // anchents
+    switch(mode){
+        case 2: // room 2
+            if(i == 1)
+                room->doors[1].type = 1;
+            else if(i == 3)
+                room->doors[0].type = 1;
+            else if(i == 6)
+                room->doors[2].type = 1;
+            else if(i == 2)
+                room->type = 1;
+                
+            break;
+        case 3: //room 5 
+            if(i == 4)
+                room->doors[1].type = 1;
+            else if(i == 6)
+                room->doors[0].type = 1;
+            else if(i == 1)
+                room->doors[2].type = 1;
+            else if(i == 6)
+                room->type = 1;
+            break;
+        case 4: //room 6 
+            if(i == 5)
+                room->doors[1].type = 1;
+            else if(i == 7)
+                room->doors[0].type = 1;
+            else if(i == 2)
+                room->doors[2].type = 1;
+            else if(i == 6)
+                room->type = 1;
+            break;
+        case 5: //room 7 
+            if(i == 3 || i == 6)
+                room->doors[1].type = 1;
+            else if(i == 7)
+                room->type = 1;
+            break;
+         
+    }
 }
 
 void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
     // for each room
     Level* level = &map->main_levels[i];
     
-    level->mode = rand_in(1,3); //mode 1: none hidden / mode 2: 2 hidden / mode 3: 3 hidden
-
+    level->mode = rand_in(1,5); //mode 1: none hidden / mode 2: 2 anchent / mode 3: 5 anchent
+                                // mode 4: 6 / mode 5: 7
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
-
-        putch_map(win, level, r->e1.y, r->e1.x, '.');
-        putch_map(win, level, r->e2.y, r->e2.x, '.');
-        putch_map(win, level, r->e3.y, r->e3.x, '|');
-        putch_map(win, level, r->e4.y, r->e4.x, '|');
+        int color_id = WHITE_TEXT;
+        if(level->mode == 2 && i == 2){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 3 && i == 5){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 4 && i == 6){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 5 && i == 7){
+            color_id = PURPLE_TEXT;
+        }
+        putch_map(win, level, r->e1.y, r->e1.x, '.', color_id);
+        putch_map(win, level, r->e2.y, r->e2.x, '.', color_id);
+        putch_map(win, level, r->e3.y, r->e3.x, '|', color_id);
+        putch_map(win, level, r->e4.y, r->e4.x, '|', color_id);
 
         for (int j = r->e1.x + 1; j < r->e2.x; j++){
-            putch_map(win, level, r->e1.y, j, '_');
-            putch_map(win, level, r->e4.y, j, '_');
+            putch_map(win, level, r->e1.y, j, '_', color_id);
+            putch_map(win, level, r->e4.y, j, '_', color_id);
         }
         for (int j = r->e1.y + 1; j < r->e3.y; j++){
-            putch_map(win, level, j, r->e1.x, '|');
-            putch_map(win, level, j, r->e4.x, '|');
+            putch_map(win, level, j, r->e1.x, '|', color_id);
+            putch_map(win, level, j, r->e4.x, '|', color_id);
         }
         for (int j = r->e1.y + 1; j < r->e3.y; j++){
             for (int z = r->e1.x + 1; z < r->e2.x; z++){
-                putch_map(win, level, j, z, '.');
+                putch_map(win, level, j, z, '.', GREEN_TEXT);
             }
         }
 
@@ -247,15 +298,30 @@ void draw_rooms_and_corridors(WINDOW* win, int h, int w, Map* map, int i){
     for (int i = 0; i < level->rooms_num; i++){
         Room *r = &level->rooms[i];
         // adding doors
+        int color_id = WHITE_TEXT;
+        if(level->mode == 2 && i == 2){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 3 && i == 5){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 4 && i == 6){
+            color_id = PURPLE_TEXT;
+        }else if(level->mode == 5 && i == 7){
+            color_id = PURPLE_TEXT;
+        }
         for (int d = 0; d < 4; d++){
-            if (r->doors[d].loc.x > 0 && r->doors[d].loc.y > 0)
-                putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '+');
+            if (r->doors[d].loc.x > 0 && r->doors[d].loc.y > 0){
+                if(r->doors[d].type == 1){
+                    putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '?', color_id);
+                } else{
+                    putch_map(win, level, r->doors[d].loc.y, r->doors[d].loc.x, '+', color_id);
+                }
+            }
         }
 
         //O
         r->O.x = rand_in(r->e1.x + 2, r->e2.x - 2);
         r->O.y = rand_in(r->e1.y + 2, r->e4.y - 2);
-        putch_map(win, level, r->O.y, r->O.x, 'O');
+        putch_map(win, level, r->O.y, r->O.x, 'O', GREEN_TEXT);
         
     }
 
