@@ -604,7 +604,7 @@ bool get_login_username(WINDOW* login_form, int height, int width, int y, int x,
     while(1){
         user_ch = wgetch(login_form);
 
-        if(user_ch == '\n'){
+        if(user_ch == '\n' && index != 0){
             username[index] = '\0';
 
             if(!does_user_exist(username)){
