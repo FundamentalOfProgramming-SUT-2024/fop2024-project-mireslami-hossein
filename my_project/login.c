@@ -10,7 +10,7 @@
 
 
 char entry_messages[3][50] = {
-    "Welcome!", "Choose a way to continue:", "(Q to exit)"
+    "Welcome!", "Choose a way to continue:", "(ESC to go back)"
 };
 char entry_options[3][50] = {
     "Sign Up", "Login", "Login as Guest"
@@ -35,6 +35,7 @@ char pass_form_labels[4][50] = {
     "Username: ", "Email: ", "Checker Word: ", "New password: "
 };
 
+void load_first_page(User* user);
 
 // Signup Validation
 void print_error_message(WINDOW* w, int height, int width,  int reset_y, int reset_x, char* ms){
@@ -48,7 +49,7 @@ void print_error_message(WINDOW* w, int height, int width,  int reset_y, int res
 
 int count_users();
 void read_usernames(char** usernames, int number_of_users);
-void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass);
+bool generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass);
 
 bool does_user_exist(char* name){
     bool result = FALSE;
@@ -123,7 +124,7 @@ bool email_validated(WINDOW* w, int height, int width, int y, int x, char* email
 }
 
 // Signup Form Handeling
-void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
+bool get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, char* username){
     int user_ch;
     int index = 0;
 
@@ -156,7 +157,12 @@ void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, c
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(user_ch < 32 || user_ch > 126) {
+        } else if(user_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;
+        } 
+        else if(user_ch < 32 || user_ch > 126) {
             continue;
         }
         if(index >= MAX_USERNAME){
@@ -171,9 +177,12 @@ void get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, c
         index++;
     }
     clear_part(sign_form, height-2, 1, height-2, width - 2);
+    curs_set(FALSE);
+    noecho();
+    return TRUE;
 }
 
-void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
+bool get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, char* password){
     int pass_ch;
     int index = 0;
     
@@ -206,6 +215,10 @@ void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, c
                 wmove(sign_form, y, x+index);
             }
             continue;
+        } else if(pass_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;;
         } else if(pass_ch < 32 || pass_ch > 126) {
             continue;
         }
@@ -224,9 +237,12 @@ void get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, c
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     password[index] = '\0';
     wrefresh(sign_form);
+    curs_set(FALSE);
+    noecho();
+    return TRUE;
 }
 
-void get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char* email){
+bool get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char* email){
     int email_ch;
     int index = 0;
 
@@ -251,6 +267,10 @@ void get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char
                 wmove(sign_form, y, x+index);
             }
             continue;
+        } else if(email_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;;
         } else if(email_ch < 32 || email_ch > 126) {
             continue;
         }
@@ -267,9 +287,12 @@ void get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char
     email[index] = '\0';
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     wrefresh(sign_form);
+    curs_set(FALSE);
+    noecho();
+    return TRUE;
 }
 
-void get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
+bool get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int x, char* checker_w){
     int check_ch;
     int index = 0;
 
@@ -290,6 +313,10 @@ void get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int 
                 wmove(sign_form, y, x+index);
             }
             continue;
+        } else if(check_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;
         } else if(check_ch < 32 || check_ch > 126) {
             continue;
         }
@@ -309,9 +336,10 @@ void get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int 
     checker_w[index] = '\0';
     curs_set(FALSE);
     noecho();
+    return TRUE;
 }
 
-void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass){
+bool generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, int x_pass, char* pass){
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     char* ms = "Do you want to generate a random pass? (y/n)";
     print_error_message(sign_form, height, width, height - 2, width/2 + strlen(ms)/2 + 1, ms);
@@ -359,9 +387,14 @@ void generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
         clear_part(sign_form, height-2, 1, height-2, width - 2);
         refresh();
     }
-
+    else if(c == 27){ // ESC
+        curs_set(FALSE);
+        noecho();   
+        return FALSE;;
+    }
     clear_part(sign_form, height-2, 1, height-2, width - 2);
     wrefresh(sign_form);
+    return TRUE;
 }
 
 
@@ -682,7 +715,52 @@ void update_user_pass(User t_user){
 }
 
 void login_as_guest(User* user){
-    user->is_guest = true;
+    user->is_guest = TRUE;
+}
+
+bool load_user_data(User *user) {
+    char* data = read_file("data/users.json");
+    char username[MAX_USERNAME];
+    
+    strcpy(username , user->username);
+    cJSON *json = cJSON_Parse(data);
+    free(data);
+    if(!json) return false;
+    cJSON *users = cJSON_GetObjectItem(json, "users");
+    if(!users) { cJSON_Delete(json); return false; }
+    bool found = false;
+    int arraySize = cJSON_GetArraySize(users);
+    for(int i = 0; i < arraySize; i++){
+        cJSON *item = cJSON_GetArrayItem(users, i);
+        cJSON *json_username = cJSON_GetObjectItem(item, "username");
+        if(json_username && strcmp(json_username->valuestring, username) == 0){
+            cJSON *json_password = cJSON_GetObjectItem(item, "password");
+            cJSON *json_email = cJSON_GetObjectItem(item, "email");
+            cJSON *json_checker = cJSON_GetObjectItem(item, "checker_word");
+            cJSON *json_rank = cJSON_GetObjectItem(item, "rank");
+            cJSON *json_points = cJSON_GetObjectItem(item, "points");
+            cJSON *json_golds = cJSON_GetObjectItem(item, "golds");
+            cJSON *json_ended_games = cJSON_GetObjectItem(item, "ended_games");
+            cJSON *json_lastgame = cJSON_GetObjectItem(item, "lastgame_id");
+            cJSON *json_color = cJSON_GetObjectItem(item, "color_id");
+            
+            user->username = strdup(json_username->valuestring);
+            user->password = json_password ? strdup(json_password->valuestring) : NULL;
+            user->email = json_email ? strdup(json_email->valuestring) : NULL;
+            user->checker_w = json_checker ? strdup(json_checker->valuestring) : NULL;
+            user->is_guest = false;
+            user->rank = json_rank ? json_rank->valueint : 0;
+            user->points = json_points ? json_points->valueint : 0;
+            user->golds = json_golds ? json_golds->valueint : 0;
+            user->ended_games = json_ended_games ? json_ended_games->valueint : 0;
+            user->last_game_id = json_lastgame ? json_lastgame->valueint : -1;
+            user->color_id = json_color ? json_color->valueint : 0;
+            found = true;
+            break;
+        }
+    }
+    cJSON_Delete(json);
+    return found;
 }
 
 void login_user(User* user){
@@ -723,6 +801,8 @@ void login_user(User* user){
             exit(0);
         }
         else if(pressed == 1){
+            // Load User Data
+            load_user_data(user);
             // Open Game Page
             break;
         }
@@ -752,14 +832,14 @@ void signup_user(User* user){
     print_buttons(sign_form, signup_form_buttons, 2, selected, y_start + 10, width/2, 1);
     print_messages(sign_form, signup_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR, 2);
 
-
-    get_sign_username(sign_form, height, width, y_start, x_start, user->username);
-
-    get_sign_password(sign_form, height, width, y_start + 2, x_start, user->password);
-
-    get_sign_email(sign_form, height, width, y_start + 4, x_start, user->email);
-
-    get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
+    bool state = TRUE;
+    state = get_sign_username(sign_form, height, width, y_start, x_start, user->username);
+    if(!state) load_first_page(user);
+    state = get_sign_password(sign_form, height, width, y_start + 2, x_start, user->password);
+    if(!state) load_first_page(user);
+    state = get_sign_email(sign_form, height, width, y_start + 4, x_start, user->email);
+    if(!state) load_first_page(user);
+    state = get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
     
     user->is_guest = FALSE;
 
@@ -835,5 +915,6 @@ void load_first_page(User* user){
     }
 
     delwin(menu);
+
     open_form(selected_btn, user);
 }

@@ -315,6 +315,51 @@ void show_setting(Game* g){
     getch();
 }
 
+void show_profile(User *user) {
+    clear();
+    int height = 19;
+    int width = 60;
+    int start_y = (LINES - height) / 2;
+    int start_x = (COLS - width) / 2;
+    WINDOW *profile_win = newwin(height, width, start_y, start_x);
+    box(profile_win, 0, 0);
+    wattron(profile_win, A_BOLD | COLOR_PAIR(HEADER_COLOR));
+    mvwprintw(profile_win, 2, (width - strlen("User Profile")) / 2, "User Profile");
+    wattroff(profile_win, A_BOLD | COLOR_PAIR(HEADER_COLOR));
+    int base = 4, spacing = 2;
+    wattron(profile_win, COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    mvwprintw(profile_win, base, 5, "Username:");
+    mvwprintw(profile_win, base + spacing, 5, "Email:");
+    mvwprintw(profile_win, base + 2 * spacing, 5, "Rank:");
+    mvwprintw(profile_win, base + 3 * spacing, 5, "Points:");
+    mvwprintw(profile_win, base + 4 * spacing, 5, "Golds:");
+    mvwprintw(profile_win, base + 5 * spacing, 5, "Ended Games:");
+    mvwprintw(profile_win, base + 6 * spacing, 5, "Last GameID:");
+    wattroff(profile_win, COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    wattron(profile_win, COLOR_PAIR(WHITE_TEXT));
+    if(user->is_guest) {
+        mvwprintw(profile_win, base, 23, "You are a guest!");
+        mvwprintw(profile_win, base + spacing, 23, "guest");
+    } else {
+        mvwprintw(profile_win, base, 23, "%s", user->username);
+        mvwprintw(profile_win, base + spacing, 23, "%s", user->email);
+    }
+    mvwprintw(profile_win, base + 2 * spacing, 23, "%d", user->rank);
+    mvwprintw(profile_win, base + 3 * spacing, 23, "%d", user->points);
+    mvwprintw(profile_win, base + 4 * spacing, 23, "%d", user->golds);
+    mvwprintw(profile_win, base + 5 * spacing, 23, "%d", user->ended_games);
+    if(user->last_game_id == -1)
+        mvwprintw(profile_win, base + 6 * spacing, 23, "You Haven't Played Yet!");
+    else
+        mvwprintw(profile_win, base + 6 * spacing, 23, "%d", user->last_game_id);
+    wattroff(profile_win, COLOR_PAIR(WHITE_TEXT));
+    refresh();
+    wrefresh(profile_win);
+    getch();
+    delwin(profile_win);
+    refresh();
+}
+
 void load_pregame_page(Game* g){
     clear();
     start_color();
@@ -359,8 +404,10 @@ void load_pregame_page(Game* g){
         // load_main_game(g);
     }else if(selected == 2 - g->user->is_guest){
         show_leaderboard(*(g->user));
-    }else if(selected == 3 - g->user->is_guest){
+    } else if(selected == 3 - g->user->is_guest){
         show_setting(g);
+    } else if(selected == 4 - g->user->is_guest){
+        show_profile(g->user);
     }
 
     delwin(menu);
