@@ -683,7 +683,7 @@ void make_random_map(Game* g){
     }
 }
 
-void draw_game_map(Game *g, WINDOW* win, int level_num){
+void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
     Level* level = &g->map->main_levels[level_num];
     char** map = level->map;
     int height = g->map->height, width = g->map->width;
@@ -711,7 +711,8 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
                 switch(*ch){
                     case 'X':
                         Trap* trap = get_trap_by_room(r, i, j);
-                        draw_in_map(win, j, i, ch, RED_TEXT, FALSE);
+                        if(state.map_show_all) draw_in_map(win, j, i, ch, RED_TEXT, FALSE);
+                        else draw_in_map(win, j, i, ".", color_id, FALSE);
                         break;
                     case '$':
                         Gold* gold = get_gold_by_room(r, i, j);
@@ -775,6 +776,16 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
                         break;
                     case '<':
                         draw_in_map(win, j, i, ch, GREEN_TEXT_WHITE, TRUE);
+                        break;
+                    case '?':
+                        Door* door_hidden = get_door_by_room(r, i, j);
+                        if(door_hidden->is_visible || state.map_show_all) draw_in_map(win, j, i, ch, color_id, FALSE);
+                        else{
+                            if(door_hidden->loc.x == r->e1.x || door_hidden->loc.x == r->e4.x)
+                                draw_in_map(win, j, i, "|", color_id, FALSE);
+                            else
+                                draw_in_map(win, j, i, "_", color_id, FALSE);
+                        }
                         break;
                     default:
                         draw_in_map(win, j, i, ch, color_id, FALSE);
@@ -853,7 +864,7 @@ void show_msg(char * ms, int y, int x, int color, bool is_bold){
     refresh();
 }
 
-void handle_key(Game* g, int* menu){
+void handle_key(Game* g, UI_state* state){
     keypad(stdscr, TRUE);
     int ch = getch();
     int x = g->player.now_loc.x, y = g->player.now_loc.y;
@@ -888,8 +899,13 @@ void handle_key(Game* g, int* menu){
             y = g->player.now_loc.y - 1;
             break;
         
+        // Show map
+        case 'm': case 'M':
+            state->map_show_all = (state->map_show_all) ? FALSE : TRUE;
+            break;
         case 'q': case 'Q':
-            *menu = -1;
+            state->quit = TRUE;
+            break;
 
     }
 
@@ -982,8 +998,11 @@ void load_main_game(Game* g){
 
     WINDOW* main_game = newwin(height, width, y_w, x_w);
     
+    UI_state state;
+    state.enchant_menu_open = state.food_menu_open = state.weapon_menu_open = state.map_show_all = state.quit = FALSE;
 
-    draw_game_map(g, main_game, player->level);
+
+    draw_game_map(g, main_game, player->level, state);
     find_first_place(g, &g->player);
     draw_player(g, main_game);
 
@@ -997,16 +1016,16 @@ void load_main_game(Game* g){
 
     
     
-    int menu;
     Loc last_place;
     while(1){
         last_place = g->player.now_loc;
-        handle_key(g, &menu);
-        draw_game_map(g, main_game, player->level);
+        handle_key(g, &state); 
+        draw_game_map(g, main_game, player->level, state);
         draw_player(g, main_game);
+        
+        
         load_player_detail(g);
-
-        if(menu == -1) break;
+        if(state.quit) break;
     }
     // while(1){
     

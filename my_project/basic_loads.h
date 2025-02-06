@@ -222,6 +222,14 @@ typedef struct {
 
 
 typedef struct{
+    bool map_show_all;
+    bool food_menu_open;
+    bool enchant_menu_open;
+    bool weapon_menu_open;
+    bool quit;
+} UI_state;
+
+typedef struct{
     int hardness;
     Map* map;
     User* user;
