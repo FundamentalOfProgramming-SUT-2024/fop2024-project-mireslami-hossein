@@ -224,6 +224,26 @@ bool can_go_loc(Game* g, int y, int x){
     return TRUE;
 }
 
+
+void show_msg(char * ms, int y, int x, int color, bool is_bold){
+    clear_part(stdscr, y, 1, y, COLS - 1);
+    if(is_bold) attron(A_BOLD);
+    
+    attron(COLOR_PAIR(color));
+    mvprintw(y,x, "%s", ms);
+    attroff(COLOR_PAIR(color));
+    if(is_bold) attroff(A_BOLD);
+
+    refresh();
+}
+
+void clear_msgs(UI_state* state){
+    for(int i = 0; i < state->msg_num; i++){
+        clear_part(stdscr, i + 2, 1, i + 2, COLS - 1);
+        strcpy(state->msg[i], "");
+    }
+    state->msg_num = 0;
+}
 // توابع اصلی
 void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
@@ -815,7 +835,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
     }
 }
 
-void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r){
+void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r, UI_state* state){
     int x = g->player.now_loc.x;
     int y = g->player.now_loc.y;
     char** map_char = g->map->main_levels[level_num].map;
@@ -845,10 +865,20 @@ void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r){
             if(i == 0 && j == 0) continue;
             switch(map_char[y + j][x + i]){
                 case '?':
+                    clear_msgs(state);
+                    state->msg_num = 1;
+                    strcpy(state->msg[0], "You found a hidden door!");
+                    show_msg(state->msg[0], 2, 2, LIGHT_YELLOW_TEXT, TRUE);
+
                     draw_in_map(win, y + j, x + i, "?", ORANGE_TEXT, FALSE);
                     if(r) get_door_by_room(r, x + i ,y + j)->is_visible = TRUE;
                     break;
                 case 'X':
+                    clear_msgs(state);
+                    state->msg_num = 1;
+                    strcpy(state->msg[0], "Be aware of Trap (X)!");
+                    show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
+
                     draw_in_map(win, y + j, x + i, "X", RED_TEXT, TRUE);
                     if(r) get_trap_by_room(r, x + i ,y + j)->visible = TRUE;
                     break;
@@ -939,18 +969,6 @@ void load_player_detail(Game* g){
 
 }
 
-void show_msg(char * ms, int y, int x, int color, bool is_bold){
-    clear_part(stdscr, y, 1, y, COLS - 1);
-    if(is_bold) attron(A_BOLD);
-    
-    attron(COLOR_PAIR(color));
-    mvprintw(y,x, "%s", ms);
-    attroff(COLOR_PAIR(color));
-    if(is_bold) attroff(A_BOLD);
-
-    refresh();
-}
-
 void handle_key(Game* g, UI_state* state){
     keypad(stdscr, TRUE);
     int ch = getch();
@@ -1002,7 +1020,7 @@ void handle_key(Game* g, UI_state* state){
     }
 }
 
-void get_object(Game* g, int x, int y){
+void get_object(Game* g, int x, int y, UI_state* state){
     char** map = g->map->main_levels[g->player.level].map;
     Room* r = get_room_by_loc(&g->map->main_levels[g->player.level], x, y);
     switch(map[y][x]){
@@ -1016,6 +1034,9 @@ void get_object(Game* g, int x, int y){
         //     break;
         // case 'W':
         //     break;
+        default:
+            break;
+
     }
 }
 
@@ -1090,36 +1111,30 @@ void load_main_game(Game* g){
     box(main_game, 0, 0);
     wrefresh(main_game);
     load_player_detail(g);
-    show_msg("Welcome!", 2, 2, WHITE_TEXT, TRUE);
-    show_msg("Use Arrow key in Num Pad to move. Q: Quit & Save", 3, 2, WHITE_TEXT, TRUE);
-    show_msg("E: Foods List / i: Weapons List / C: Enchants List", 4, 2, WHITE_TEXT, TRUE);
-
     
+    state.msg_num = 3;
+    strcpy(state.msg[0], "Welcome!");
+    strcpy(state.msg[1], "Use Arrow key in Num Pad to move. Q: Quit & Save");
+    strcpy(state.msg[2], "E: Foods List / i: Weapons List / C: Enchants List");
+    for(int i = 0; i < state.msg_num; i++){
+        show_msg(state.msg[i], i + 2, 2, WHITE_TEXT, TRUE);
+    }
     
     Loc last_place;
     while(1){
         last_place = g->player.now_loc;
 
-        handle_key(g, &state); 
+        handle_key(g, &state);
+        clear_msgs(&state);
         draw_game_map(g, main_game, player->level, state);
         draw_player(g, main_game);
-        show_visible_corridor(g, main_game, player->level, state.visible_r);
-        get_object(g, g->player.now_loc.x, g->player.now_loc.y);
+        show_visible_corridor(g, main_game, player->level, state.visible_r, &state);
+        get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
+
         // show_enemys(g);
         load_player_detail(g);
         if(state.quit) break;
     }
-    // while(1){
-    
-    //         // show visited parts
-    //         // show visible area (if in corridor)
-    //         // show messages
-               // handle key -> move->f,g,orib?/menus->food(E), /map show(M)/quit menu(Q)
-    //         // load player loc
-    //         // giving objects in this loc -> delete from map, add to player
-                // load user details
-                // load enemies
-    // }
     delwin(main_game);
     free_game(g);
 }

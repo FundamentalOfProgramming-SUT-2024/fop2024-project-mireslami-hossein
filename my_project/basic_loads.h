@@ -228,6 +228,10 @@ typedef struct{
     bool weapon_menu_open;
     bool quit;
     int visible_r;
+
+    char msg[3][50];
+    int msg_num;
+
 } UI_state;
 
 typedef struct{
