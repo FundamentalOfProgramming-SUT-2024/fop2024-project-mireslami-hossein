@@ -591,7 +591,7 @@ void password_forget_panel(int height, int width, int y_pass, int x_pass, User* 
 }
 
 // Login Form Handeling
-void get_login_username(WINDOW* login_form, int height, int width, int y, int x, char* username){
+bool get_login_username(WINDOW* login_form, int height, int width, int y, int x, char* username){
     int user_ch;
     int index = 0;
 
@@ -621,7 +621,11 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
                 wmove(login_form, y, x+index);
             }
             continue;
-        } else if(user_ch < 32 || user_ch > 126) {
+        } else if(user_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;;
+        }else if(user_ch < 32 || user_ch > 126) {
             continue;
         }
         if(index >= MAX_USERNAME){
@@ -633,9 +637,10 @@ void get_login_username(WINDOW* login_form, int height, int width, int y, int x,
         index++;
     }
     clear_part(login_form, height-2, 1, height-2, width - 2);
+    return TRUE;
 }
 
-void get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
+bool get_login_password(WINDOW* login_form, int height, int width, int y, int x, User* user){
     int pass_ch;
     int index = 0;
     bool password_reset = false;
@@ -674,6 +679,10 @@ void get_login_password(WINDOW* login_form, int height, int width, int y, int x,
                 wmove(login_form, y, x+index);
             }
             continue;
+        }else if(pass_ch == 27){ // ESC
+            curs_set(FALSE);
+            noecho();   
+            return FALSE;;
         } else if(pass_ch < 32 || pass_ch > 126) {
             continue;
         }
@@ -785,10 +794,17 @@ void login_user(User* user){
 
     print_messages(login_form, login_form_labels, 4, y_start, x_start, 'r', LABEL_COLOR, 2);
     print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2, 1);
-
-    get_login_username(login_form, height, width, y_start, x_start, user->username);
-    get_login_password(login_form, height, width, y_start + 2, x_start, user);
-
+    bool state = TRUE;
+    state = get_login_username(login_form, height, width, y_start, x_start, user->username);
+    if(!state){
+        load_first_page(user);
+        return;    
+    }
+    state = get_login_password(login_form, height, width, y_start + 2, x_start, user);
+    if(!state){
+        load_first_page(user);
+        return;    
+    }
     user->is_guest = FALSE;
 
     curs_set(FALSE);
@@ -834,11 +850,20 @@ void signup_user(User* user){
 
     bool state = TRUE;
     state = get_sign_username(sign_form, height, width, y_start, x_start, user->username);
-    if(!state) load_first_page(user);
+    if(!state){
+        load_first_page(user);
+        return;    
+    }
     state = get_sign_password(sign_form, height, width, y_start + 2, x_start, user->password);
-    if(!state) load_first_page(user);
+    if(!state){
+        load_first_page(user);
+        return;    
+    }
     state = get_sign_email(sign_form, height, width, y_start + 4, x_start, user->email);
-    if(!state) load_first_page(user);
+    if(!state){
+        load_first_page(user);
+        return;    
+    }
     state = get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
     
     user->is_guest = FALSE;
