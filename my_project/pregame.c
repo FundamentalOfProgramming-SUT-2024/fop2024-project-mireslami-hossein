@@ -355,7 +355,9 @@ void load_pregame_page(Game* g){
         }
     }
     
-    if(selected == 2 - g->user->is_guest){
+    if(selected == 0){
+        // load_main_game(g);
+    }else if(selected == 2 - g->user->is_guest){
         show_leaderboard(*(g->user));
     }else if(selected == 3 - g->user->is_guest){
         show_setting(g);

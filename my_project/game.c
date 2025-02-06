@@ -854,35 +854,36 @@ void show_msg(char * ms, int y, int x, int color, bool is_bold){
 }
 
 void handle_key(Game* g, int* menu){
+    keypad(stdscr, TRUE);
     int ch = getch();
     int x = g->player.now_loc.x, y = g->player.now_loc.y;
     switch(ch){
         // Movement
-        case KEY_UP:case 8:
+        case KEY_UP:case '8':
             y = g->player.now_loc.y - 1;
             break;
-        case KEY_DOWN:case 2:
+        case KEY_DOWN:case '2':
             y = g->player.now_loc.y + 1;
             break;
-        case KEY_RIGHT:case 6:
+        case KEY_RIGHT:case '6':
             x = g->player.now_loc.x + 1;
             break;
-        case KEY_LEFT:case 4:
+        case KEY_LEFT:case '4':
             x = g->player.now_loc.x - 1;
             break;
-        case 9:
+        case '9':
             x = g->player.now_loc.x + 1;
             y = g->player.now_loc.y - 1;
             break;
-        case 3:
+        case '3':
             x = g->player.now_loc.x + 1;
             y = g->player.now_loc.y + 1;
             break;
-        case 1:
+        case '1':
             x = g->player.now_loc.x - 1;
             y = g->player.now_loc.y + 1;
             break;
-        case 7:
+        case '7':
             x = g->player.now_loc.x - 1;
             y = g->player.now_loc.y - 1;
             break;
