@@ -473,17 +473,16 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
         // golds
         int golds_num, rand_num;
         if(r->type == 0){
-            golds_num = rand_in(1 + r->w/5 + r->h/5, 3 + r->w/5 + r->h/5);
-            
+            golds_num = rand_in(0, 3 + r->w/5 + r->h/5);
         } else if (r -> type == 1){
-            golds_num = rand_in(1 + r->w/5 + r->h/5, 3 + r->w/5 + r->h/5);
+            golds_num = rand_in(0, 3 + r->w/5 + r->h/5);
         } else if(r -> type == 2){
             golds_num = rand_in(2, 3 + r->w/5 + r->h/5);
         }
         for(int j = 0; j < golds_num; j ++){
             r->golds[j].loc = find_empty_place_room(*level, *r, 1);
             rand_num = rand_in(1, 10);
-            if(rand_num <= 8){
+            if(rand_num <= 9){
                 r->golds[j].type = 0;
             } else{
                 r->golds[j].type = 1;
@@ -574,7 +573,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
             putch_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'W');
         }
         // enenmies
-        int enemy_num = rand_in(0, 1 + r->w/7 + r->h/7);
+        int enemy_num = rand_in(1, 1 + r->w/7 + r->h/7);
         if(r->type == 2){
             enemy_num = rand_in(4, 4 + r->w/7 + r->h/7);
         }
