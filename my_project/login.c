@@ -699,6 +699,7 @@ bool get_login_password(WINDOW* login_form, int height, int width, int y, int x,
     if(password_reset){
         password_forget_panel(height, width + 5, y, x, user);
     }
+    return TRUE;
 }
 
 // Data
@@ -896,7 +897,6 @@ void signup_user(User* user){
 
 void open_form(int selected, User* user){
     clear();
-    // Sign Up
     if(selected == 0){
         signup_user(user);
     } else if(selected == 1){
@@ -934,7 +934,7 @@ void load_first_page(User* user){
         handle_selected_btn(&selected_btn, btn_nums, &exit_flag);
     }
 
-    if(exit_flag == -1){
+    if(exit_flag == -1 || exit_flag == -2){
         endwin();
         exit(0);
     }
