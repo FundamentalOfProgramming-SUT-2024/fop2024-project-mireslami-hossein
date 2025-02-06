@@ -409,7 +409,12 @@ void add_doors_to_room(int i, Room *room, int mode) {
 void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
     
     Level* level = &map->main_levels[level_num];
-    
+    if(level_num == 0) level->rooms[0].is_visited = 1;
+    else{
+        Level* pre_level = &map->main_levels[level_num - 1];
+        int id = pre_level->stair_room_index;
+        level->rooms[id].is_visited = 1;
+    }
     level->mode = rand_in(2,5); //mode 1: none hidden / mode 2: 2 anchent / mode 3: 5 anchent
                                 // mode 4: 6 / mode 5: 7
     switch(level->mode){
@@ -425,12 +430,6 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
         case 5:
             level->rooms[7].type = 1;
             break;
-    }
-    // Golden room
-    int golden_room_i;
-    if(level_num == 3){
-        golden_room_i = find_good_id_for_room(map, level_num);
-        level->rooms[golden_room_i].type = 2;
     }
 
     // for each room
@@ -653,14 +652,13 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
     }
 
     // Stair
-    // // To down   
-    
+    // // To down
     int stair_room_index, color_id;
+    stair_room_index = find_good_id_for_room(map, level_num);
     if(level_num == 3){
-        stair_room_index = golden_room_i;
+        level->rooms[stair_room_index].type = 2;
         color_id = GREEN_TEXT_YELLOW;
     } else{
-        stair_room_index = find_good_id_for_room(map, level_num);
         color_id = GREEN_TEXT_WHITE;
     }
     level->stair_room_index = stair_room_index;
@@ -704,7 +702,6 @@ void make_random_map(Game* g){
             
             set_room(&map_rooms[i], rand_in(x_s, x_f - w_room - 1), rand_in(y_s, y_f - h_room - 1), w_room, h_room);
         }
-        map_rooms[0].is_visited = TRUE;
         if(j != 0){
             Level pre_lev = g->map->main_levels[j-1];
             int i = pre_lev.stair_room_index;
@@ -718,11 +715,12 @@ void make_random_map(Game* g){
     }
 }
 
+
 void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
     Level* level = &g->map->main_levels[level_num];
     char** map = level->map;
     int height = g->map->height, width = g->map->width;
-
+    // # s
     for(int j = 1; j < height - 1; j++){
         for(int i = 1; i < width - 1; i++){
             char letter[5];
@@ -732,7 +730,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
             if(map[j][i] == '#' && (level->visited[j][i] == 1 || state.map_show_all)) draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
         }
     }
-    
+
     for(int z = 0; z < level->rooms_num; z++){
         Room* r = &level->rooms[z];
         if(r->is_visited == FALSE && !state.map_show_all) continue;
@@ -808,7 +806,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
                         }
                         break;
                     case '>':
-                        if(level->number == 3){
+                        if(level->number == 4){
                             draw_in_map(win, j, i, ch, GREEN_TEXT_YELLOW, TRUE);
                         } else{
                             draw_in_map(win, j, i, ch, GREEN_TEXT_WHITE, TRUE);
@@ -833,6 +831,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
             }
         }
     }
+    wrefresh(win);
 }
 
 void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r, UI_state* state){
@@ -973,35 +972,46 @@ void handle_key(Game* g, UI_state* state){
     keypad(stdscr, TRUE);
     int ch = getch();
     int x = g->player.now_loc.x, y = g->player.now_loc.y;
+    bool move = FALSE;
+
+    char** map = g->map->main_levels[g->player.level].map;
     switch(ch){
         // Movement
         case KEY_UP:case '8':
             y = g->player.now_loc.y - 1;
+            move = TRUE;
             break;
         case KEY_DOWN:case '2':
             y = g->player.now_loc.y + 1;
+            move = TRUE;
             break;
         case KEY_RIGHT:case '6':
             x = g->player.now_loc.x + 1;
+            move = TRUE;
             break;
         case KEY_LEFT:case '4':
             x = g->player.now_loc.x - 1;
+            move = TRUE;
             break;
         case '9':
             x = g->player.now_loc.x + 1;
             y = g->player.now_loc.y - 1;
+            move = TRUE;
             break;
         case '3':
             x = g->player.now_loc.x + 1;
             y = g->player.now_loc.y + 1;
+            move = TRUE;
             break;
         case '1':
             x = g->player.now_loc.x - 1;
             y = g->player.now_loc.y + 1;
+            move = TRUE;
             break;
         case '7':
             x = g->player.now_loc.x - 1;
             y = g->player.now_loc.y - 1;
+            move = TRUE;
             break;
         
         // Show map
@@ -1012,9 +1022,21 @@ void handle_key(Game* g, UI_state* state){
             state->quit = TRUE;
             break;
 
+        // stairs
+        case '>':
+            if(map[y][x] == '>'){
+                if(g->player.level == 3) state->quit = TRUE;
+                else g->player.level++;
+            }
+            break;
+        case '<':
+            if(map[y][x] == '<'){
+                g->player.level--;
+            }
+            break;
     }
 
-    if(can_go_loc(g, y, x)){
+    if(move && can_go_loc(g, y, x)){
         g->player.now_loc.x = x;
         g->player.now_loc.y = y;
     }
@@ -1030,8 +1052,23 @@ void get_object(Game* g, int x, int y, UI_state* state){
             g->player.points += gold->num * 10;
             gold->num = 0;
             break;
-        // case '>': case '<':
-        //     break;
+        case '>':
+            clear_msgs(state);
+            state->msg_num = 2;
+            strcpy(state->msg[0], "You found a Stair to DOWN!");
+            strcpy(state->msg[1], "Press > To go down");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+            break;
+        case '<':
+            clear_msgs(state);
+            state->msg_num = 2;
+            strcpy(state->msg[0], "Stair to UP!");
+            strcpy(state->msg[1], "Press < To go UP!");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+            break;
+        
         // case 'W':
         //     break;
         default:
@@ -1126,9 +1163,9 @@ void load_main_game(Game* g){
 
         handle_key(g, &state);
         clear_msgs(&state);
-        draw_game_map(g, main_game, player->level, state);
+        draw_game_map(g, main_game, g->player.level, state);
         draw_player(g, main_game);
-        show_visible_corridor(g, main_game, player->level, state.visible_r, &state);
+        show_visible_corridor(g, main_game, g->player.level, state.visible_r, &state);
         get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
 
         // show_enemys(g);
