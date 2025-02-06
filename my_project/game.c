@@ -497,10 +497,10 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
             rand_num = rand_in(1, 10);
             if(rand_num <= 9){
                 r->golds[j].type = 0;
-                r->golds[j].num = 10;
+                r->golds[j].num = 2;
             } else{
                 r->golds[j].type = 1;
-                r->golds[j].num = 40;
+                r->golds[j].num = 10;
             }
             putch_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$');
         } 
