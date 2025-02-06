@@ -9,6 +9,7 @@
 #include <locale.h>
 
 #include "basic_loads.h"
+#include "game.c"
 
 char pregame_user_options[5][50] = {
     "New Game", "Load Game", "Leaderboard", "Settings" , "Profile"
@@ -96,20 +97,25 @@ void print_headers(WINDOW* w, char lb_titles[6][20], int y, int x){
 }
 // mode: 1:default 2:User 3:Top Users
 void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
+    // mvprintw(0,0, "mode: %d username: %s", mode, user.username);
+    // getch();
+    // refresh();
     switch (mode) {
         case 2:
-            wattron(w, A_BOLD);
+            wattron(w, A_BOLD | COLOR_PAIR(ORANGE_TEXT));
             break;
         case 3:
             wattron(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
             break;
     }
-    if(mode == 3 && user.rank == 1){
+    if(user.rank == 1){
         mvwprintw(w, y, x_start-3, "🥇 ");
-    } else if(mode == 3 && user.rank == 2){
+    } else if(user.rank == 2){
         mvwprintw(w, y, x_start-3, "🥈 ");
-    } else if(mode == 3 && user.rank == 3){
+    } else if(user.rank == 3){
         mvwprintw(w, y, x_start-3, "🥉 ");
+    } else{
+        mvwprintw(w, y, x_start-3, "  ");
     }
     mvwprintw(w, y, x_start, "%d", user.rank);
     mvwprintw(w, y, x_start + 14 - strlen(user.username)/2, "%s", user.username);
@@ -121,7 +127,7 @@ void print_userdata(WINDOW* w, User user, int y, int x_start, int mode){
 
     switch (mode) {
         case 2:
-            wattroff(w, A_BOLD);
+            wattroff(w, A_BOLD | COLOR_PAIR(ORANGE_TEXT));
             break;
         case 3:
             wattroff(w, A_BOLD |COLOR_PAIR(TEXT_COLOR));
@@ -152,27 +158,28 @@ void print_users(WINDOW* w, User user, int height, int width, int start_i, int m
             reset_user_data(&t_user_data);
 
             cJSON* t_user = users_sorted[i].user;
-            t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
             
-            if(t_user_data.rank == 1){
-                strcpy(t_user_data.username, "Leader ");
-            }else if(t_user_data.rank == 2){
-                strcpy(t_user_data.username, "Goat ");
-            }if(t_user_data.rank == 3){
-                strcpy(t_user_data.username, "Mr ");
-            }
-            strcat(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
-            // strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
-            if(!user.is_guest && strcmp(t_user_data.username, user.username) == 0)
-                mode = 2;
+            t_user_data.rank = cJSON_GetObjectItem(t_user, "rank")->valueint;
 
+            strcpy(t_user_data.username, cJSON_GetObjectItem(t_user, "username")->valuestring);
+
+            if(strcmp(t_user_data.username, user.username) == 0)
+                mode = 2;
+            else if(i <= 2)
+                mode = 3;
+
+            char username[MAX_USERNAME];
+            char rand_names[5][10] = {"Goat ", "Lion ", "Hero ", "Heroic ", "Gallant "};
+            if(t_user_data.rank <= 3){
+                strcpy(username, rand_names[rand()%5]);
+                strcat(username, t_user_data.username);
+                strcpy(t_user_data.username ,username);
+            }
             t_user_data.points = cJSON_GetObjectItem(t_user, "points")->valueint;
             t_user_data.golds = cJSON_GetObjectItem(t_user, "golds")->valueint;
             t_user_data.ended_games = cJSON_GetObjectItem(t_user, "ended_games")->valueint;
             t_user_data.experience = cJSON_GetObjectItem(t_user, "experience")->valueint;
             
-            if(i <= 2)
-                mode = 3;
             
             print_userdata(w, t_user_data, y_start + 2*(i - start_i), x_start, mode);
         }
@@ -181,7 +188,27 @@ void print_users(WINDOW* w, User user, int height, int width, int start_i, int m
 
 }
 
-void show_leaderboard(User user){
+void print_colors(WINDOW* w, int width, int height, int y, int x, int color_num, int selected){
+    
+    for(int i = 0; i < color_num; i++){
+        wattron(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
+        if(selected == i){
+            wattron(w, A_REVERSE);
+            mvwprintw(w, y, x, "%s", player_colors[i]);
+            wattroff(w, A_REVERSE | A_BOLD);
+        } else{
+            mvwprintw(w, y, x, "%s", player_colors[i]);
+            wattroff(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
+        }
+
+        x += (strlen(player_colors[i]) + 5);
+    }
+    wrefresh(w);
+    refresh();
+}
+
+
+bool show_leaderboard(User user){
     clear();
     int height = 22, width = 90;
     int y_w = LINES/2 - height/2;
@@ -206,28 +233,11 @@ void show_leaderboard(User user){
             if(start_index > 0) --start_index;
         }else if(ch == KEY_DOWN){
             if(start_index < num_of_users - max) ++start_index;
-        } else if(ch == 'q' || ch == 'Q') break;
-    }
-
-}
-
-void print_colors(WINDOW* w, int width, int height, int y, int x, int color_num, int selected){
-    
-    for(int i = 0; i < color_num; i++){
-        wattron(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
-        if(selected == i){
-            wattron(w, A_REVERSE);
-            mvwprintw(w, y, x, "%s", player_colors[i]);
-            wattroff(w, A_REVERSE | A_BOLD);
-        } else{
-            mvwprintw(w, y, x, "%s", player_colors[i]);
-            wattroff(w, COLOR_PAIR(player_color_ids[i]) | A_BOLD);
+        } else if(ch == KEY_ESC){
+            return FALSE;
         }
-
-        x += (strlen(player_colors[i]) + 5);
     }
-    wrefresh(w);
-    refresh();
+    return TRUE;
 }
 
 void get_game_hardness(Game* g, WINDOW* set_w) {
@@ -264,7 +274,7 @@ void get_game_hardness(Game* g, WINDOW* set_w) {
         g->hardness = hardness;
 }
 
-void show_setting(Game* g){
+bool show_setting(Game* g){
     clear();
     int height = 18, width = 70;
     int y_w = LINES/2 - height/2;
@@ -299,23 +309,21 @@ void show_setting(Game* g){
             if(selected > 0) --selected;
         }else if(ch == KEY_RIGHT){
             if(selected < color_num-1) ++selected;
-        } else if(ch == 'q' || ch == 'Q'){
-            pressed = -1;
-        } 
+        } else if(ch == KEY_ESC){ // ESC
+            return FALSE;
+        }
         else if(ch == '\n') pressed = 1;
     }
     if(pressed == 1){
         g->user->color_id = player_color_ids[selected];
         if(!g->user->is_guest) update_user_int_data(*(g->user), "color_id", g->user->color_id);
         get_game_hardness(g, set_w);
-    } else if(pressed == -1){
-        // Go Back
     }
 
-    getch();
+    return TRUE;
 }
 
-void show_profile(User *user) {
+bool show_profile(User *user) {
     clear();
     int height = 19;
     int width = 60;
@@ -355,9 +363,15 @@ void show_profile(User *user) {
     wattroff(profile_win, COLOR_PAIR(WHITE_TEXT));
     refresh();
     wrefresh(profile_win);
-    getch();
     delwin(profile_win);
     refresh();
+
+    while(1){
+        int c = getch();
+        if(c == KEY_ESC){
+            return FALSE;
+        }
+    }
 }
 
 void load_pregame_page(Game* g){
@@ -399,9 +413,19 @@ void load_pregame_page(Game* g){
             handle_selected_btn(&selected, 5, &pressed);
         }
     }
-    
-    if(selected == 0){
-        // load_main_game(g);
+    if(pressed == -1){
+        exit(0);
+        delwin(menu);
+    } else if(pressed == -2){ // ESC to go back
+        load_first_page(g->user);
+        return;
+    }
+
+
+    if(selected == 0){ // New game
+        load_main_game(g);
+        delwin(menu);
+        return;
     }else if(selected == 2 - g->user->is_guest){
         show_leaderboard(*(g->user));
     } else if(selected == 3 - g->user->is_guest){
@@ -409,6 +433,7 @@ void load_pregame_page(Game* g){
     } else if(selected == 4 - g->user->is_guest){
         show_profile(g->user);
     }
-
-    delwin(menu);
+    
+    load_pregame_page(g);
+    return;    
 }

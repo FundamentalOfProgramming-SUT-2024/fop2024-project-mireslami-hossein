@@ -12,7 +12,6 @@ gcc main.c -o game.out -lncursesw -lcjson -lm && ./game.out
 #include "basic_loads.h"
 #include "login.c"
 #include "pregame.c"
-#include "game.c"
 
 
 
@@ -42,6 +41,5 @@ int main(){
     load_first_page(&user);
     load_pregame_page(&game);
 
-    load_main_game(&game);
     endwin();
 }
