@@ -39,8 +39,8 @@ int main(){
     
     game_initalize();
     
-    // load_first_page(&user);
-    // load_pregame_page(&game);
+    load_first_page(&user);
+    load_pregame_page(&game);
 
     load_main_game(&game);
     endwin();
