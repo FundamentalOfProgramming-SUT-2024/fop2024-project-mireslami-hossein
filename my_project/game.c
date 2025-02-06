@@ -706,14 +706,14 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
             char letter[5];
             int color_id;
 
-            if(map[j][i] == ' ') continue;
-            if(map[j][i] == '#' && level->visited[j][i] == 1) draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
+            if(map[j][i] == ' ' || !level->visited[j][i]) draw_in_map(win, j, i, " ", WHITE_TEXT, FALSE);
+            if(map[j][i] == '#' && (level->visited[j][i] == 1 || state.map_show_all)) draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
         }
     }
     
     for(int z = 0; z < level->rooms_num; z++){
         Room* r = &level->rooms[z];
-        if(r->is_visited == FALSE) continue;
+        if(r->is_visited == FALSE && !state.map_show_all) continue;
         int color_id = WHITE_TEXT;
         if(r->type == 1) color_id = PURPLE_TEXT;
         if(r->type == 2) color_id = YELLOW_TEXT;
@@ -725,7 +725,7 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
                 switch(*ch){
                     case 'X':
                         Trap* trap = get_trap_by_room(r, i, j);
-                        if(state.map_show_all) draw_in_map(win, j, i, ch, RED_TEXT, FALSE);
+                        if(state.map_show_all || trap->visible) draw_in_map(win, j, i, ch, RED_TEXT, TRUE);
                         else draw_in_map(win, j, i, ".", color_id, FALSE);
                         break;
                     case '$':
@@ -813,8 +813,8 @@ void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r){
     int x = g->player.now_loc.x;
     int y = g->player.now_loc.y;
     char** map_char = g->map->main_levels[level_num].map;
-    if(get_room_by_loc(&g->map->main_levels[level_num], x, y)) return;
     for(int i = -1* visible_r; i <= visible_r; i++){
+        if(get_room_by_loc(&g->map->main_levels[level_num], x, y)) break;
         for(int j = -1* visible_r; j <= visible_r; j++){
             if(x+i < 0 || y+j < 0) continue;
             if(i == 0 && j == 0) continue;
@@ -827,6 +827,24 @@ void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r){
                     str[0] = map_char[y + j][x + i];
                     str[1] = '\0';
                     draw_in_map(win, y + j, x + i, str, LIGHT_YELLOW_TEXT, TRUE);
+                    break;
+            }
+        }
+    }
+    for(int i = -1; i <= 1; i++){
+        for(int j = -1; j <= 1; j++){  
+            Room* r = get_room_by_loc(&g->map->main_levels[level_num], x, y);
+
+            if(x+i < 0 || y+j < 0) continue;
+            if(i == 0 && j == 0) continue;
+            switch(map_char[y + j][x + i]){
+                case '?':
+                    draw_in_map(win, y + j, x + i, "?", ORANGE_TEXT, FALSE);
+                    if(r) get_door_by_room(r, x + i ,y + j)->is_visible = TRUE;
+                    break;
+                case 'X':
+                    draw_in_map(win, y + j, x + i, "X", RED_TEXT, TRUE);
+                    if(r) get_trap_by_room(r, x + i ,y + j)->visible = TRUE;
                     break;
             }
         }
@@ -1008,30 +1026,6 @@ void free_game(Game* g) {
     }
     free(map->main_levels);
 
-
-    // for (int i = 0; i < map->levels_num; i++) {
-    //     Level* level = &map->visited_levels[i];
-
-    //     if (level->map != NULL) {
-    //         for (int j = 0; j < map->height; j++) {
-    //             free(level->map[j]);
-    //         }
-    //         free(level->map);
-    //     }
-
-    //     if (level->visited != NULL) {
-    //         for (int j = 0; j < map->height; j++) {
-    //             free(level->visited[j]);
-    //         }
-    //         free(level->visited);
-    //     }
-
-    //     if (level->rooms != NULL) {
-    //         free(level->rooms);
-    //     }
-    // }
-    // free(map->visited_levels);
-
     free(map);
     g->map = NULL;
 }
@@ -1082,8 +1076,9 @@ void load_main_game(Game* g){
     Loc last_place;
     while(1){
         last_place = g->player.now_loc;
-        draw_game_map(g, main_game, player->level, state);
+
         handle_key(g, &state); 
+        draw_game_map(g, main_game, player->level, state);
         draw_player(g, main_game);
         show_visible_corridor(g, main_game, player->level, state.visible_r);
         // get_object(g);
