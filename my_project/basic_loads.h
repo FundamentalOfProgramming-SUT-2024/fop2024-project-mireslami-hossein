@@ -9,6 +9,9 @@
 #include "cjson/cJSON.h"
 #include <locale.h>
 
+// New KEYs
+#define KEY_ESC 27
+
 // MAX_SIZES
 #define MAX_USERNAME 15
 #define MAX_PASSWORD 20
@@ -343,10 +346,14 @@ void handle_selected_btn(int* selected, int size, int* flag){
         *flag = 1;
         break;
     
-    case 'q':case 'Q':
+    case 'q':case 'Q': 
         *flag = -1;
         break;
+    case 27: //ESC
+        *flag = -2;
+        break;
     }
+
 }
 
 

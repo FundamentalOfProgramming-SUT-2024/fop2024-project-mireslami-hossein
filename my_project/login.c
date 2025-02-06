@@ -157,7 +157,7 @@ bool get_sign_username(WINDOW* sign_form, int height, int width, int y, int x, c
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(user_ch == 27){ // ESC
+        } else if(user_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;
@@ -215,7 +215,7 @@ bool get_sign_password(WINDOW* sign_form, int height, int width, int y, int x, c
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(pass_ch == 27){ // ESC
+        } else if(pass_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;;
@@ -267,7 +267,7 @@ bool get_sign_email(WINDOW* sign_form, int height, int width, int y, int x, char
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(email_ch == 27){ // ESC
+        } else if(email_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;;
@@ -313,7 +313,7 @@ bool get_sign_checker_word(WINDOW* sign_form, int height, int width, int y, int 
                 wmove(sign_form, y, x+index);
             }
             continue;
-        } else if(check_ch == 27){ // ESC
+        } else if(check_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;
@@ -387,7 +387,7 @@ bool generate_random_pass(WINDOW* sign_form, int height, int width, int y_pass, 
         clear_part(sign_form, height-2, 1, height-2, width - 2);
         refresh();
     }
-    else if(c == 27){ // ESC
+    else if(c == KEY_ESC){ // ESC
         curs_set(FALSE);
         noecho();   
         return FALSE;;
@@ -621,7 +621,7 @@ bool get_login_username(WINDOW* login_form, int height, int width, int y, int x,
                 wmove(login_form, y, x+index);
             }
             continue;
-        } else if(user_ch == 27){ // ESC
+        } else if(user_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;;
@@ -679,7 +679,7 @@ bool get_login_password(WINDOW* login_form, int height, int width, int y, int x,
                 wmove(login_form, y, x+index);
             }
             continue;
-        }else if(pass_ch == 27){ // ESC
+        }else if(pass_ch == KEY_ESC){ // ESC
             curs_set(FALSE);
             noecho();   
             return FALSE;;
