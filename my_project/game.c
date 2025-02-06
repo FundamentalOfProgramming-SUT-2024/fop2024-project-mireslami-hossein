@@ -497,8 +497,10 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
             rand_num = rand_in(1, 10);
             if(rand_num <= 9){
                 r->golds[j].type = 0;
+                r->golds[j].num = 10;
             } else{
                 r->golds[j].type = 1;
+                r->golds[j].num = 40;
             }
             putch_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$');
         } 
@@ -730,6 +732,10 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
                         break;
                     case '$':
                         Gold* gold = get_gold_by_room(r, i, j);
+                        if(gold->num == 0){
+                            draw_in_map(win, j, i, ".", color_id, FALSE);
+                            break;
+                        }
                         if(gold->type == 0){
                             draw_in_map(win, j, i, "⛂", YELLOW_TEXT, FALSE);
                         }
@@ -996,6 +1002,23 @@ void handle_key(Game* g, UI_state* state){
     }
 }
 
+void get_object(Game* g, int x, int y){
+    char** map = g->map->main_levels[g->player.level].map;
+    Room* r = get_room_by_loc(&g->map->main_levels[g->player.level], x, y);
+    switch(map[y][x]){
+        case '$':
+            Gold* gold = get_gold_by_room(r, x, y);
+            g->player.golds += gold->num;
+            g->player.points += gold->num * 10;
+            gold->num = 0;
+            break;
+        // case '>': case '<':
+        //     break;
+        // case 'W':
+        //     break;
+    }
+}
+
 void free_game(Game* g) {
     if (g == NULL || g->map == NULL)
         return;
@@ -1081,7 +1104,7 @@ void load_main_game(Game* g){
         draw_game_map(g, main_game, player->level, state);
         draw_player(g, main_game);
         show_visible_corridor(g, main_game, player->level, state.visible_r);
-        // get_object(g);
+        get_object(g, g->player.now_loc.x, g->player.now_loc.y);
         // show_enemys(g);
         load_player_detail(g);
         if(state.quit) break;
