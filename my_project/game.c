@@ -149,6 +149,16 @@ int find_good_id_for_room(Map* map, int level_num){
     return res;
 }
 
+Room* get_room_by_loc(Level* level, int x, int y){
+    for(int i = 0; i < level->rooms_num; i++){
+        Room* r = &level->rooms[i];
+        if(x > r->e1.x && x < r->e4.x &&
+           y > r->e1.y && y < r->e4.y){
+            return r;
+        }
+    }
+    return NULL;
+}
 Door* get_door_by_room(Room* r, int x, int y){
     for(int i = 0; i < MAX_DOORS_ROOM; i++){
         if(r->doors[i].loc.x == x && r->doors[i].loc.y == y)
@@ -204,6 +214,9 @@ bool can_go_loc(Game* g, int y, int x){
     
     switch(g->map->main_levels[level_num].map[y][x]){
         case '_': case '|': case 'O': case ' ':
+            return FALSE;
+        // enemies
+        case 'F': case 'U': case 'G': case 'S': case 'D':
             return FALSE;
     }
     if(y < 0 || x < 0) return FALSE;
@@ -473,7 +486,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
         // golds
         int golds_num, rand_num;
         if(r->type == 0){
-            golds_num = rand_in(0, 3 + r->w/5 + r->h/5);
+            golds_num = rand_in(0, 5 + r->w/5 + r->h/5);
         } else if (r -> type == 1){
             golds_num = rand_in(0, 3 + r->w/5 + r->h/5);
         } else if(r -> type == 2){
@@ -574,6 +587,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
         }
         // enenmies
         int enemy_num = rand_in(1, 1 + r->w/7 + r->h/7);
+        if(i == 0) enemy_num = rand_in(0,1);
         if(r->type == 2){
             enemy_num = rand_in(4, 4 + r->w/7 + r->h/7);
         }
@@ -668,7 +682,7 @@ void make_random_map(Game* g){
             
             set_room(&map_rooms[i], rand_in(x_s, x_f - w_room - 1), rand_in(y_s, y_f - h_room - 1), w_room, h_room);
         }
-        
+        map_rooms[0].is_visited = TRUE;
         if(j != 0){
             Level pre_lev = g->map->main_levels[j-1];
             int i = pre_lev.stair_room_index;
@@ -693,12 +707,13 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
             int color_id;
 
             if(map[j][i] == ' ') continue;
-            if(map[j][i] == '#') draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
+            if(map[j][i] == '#' && level->visited[j][i] == 1) draw_in_map(win, j, i, "#", ORANGE_TEXT, FALSE);
         }
     }
     
     for(int z = 0; z < level->rooms_num; z++){
         Room* r = &level->rooms[z];
+        if(r->is_visited == FALSE) continue;
         int color_id = WHITE_TEXT;
         if(r->type == 1) color_id = PURPLE_TEXT;
         if(r->type == 2) color_id = YELLOW_TEXT;
@@ -794,6 +809,31 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
     }
 }
 
+void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r){
+    int x = g->player.now_loc.x;
+    int y = g->player.now_loc.y;
+    char** map_char = g->map->main_levels[level_num].map;
+    if(get_room_by_loc(&g->map->main_levels[level_num], x, y)) return;
+    for(int i = -1* visible_r; i <= visible_r; i++){
+        for(int j = -1* visible_r; j <= visible_r; j++){
+            if(x+i < 0 || y+j < 0) continue;
+            if(i == 0 && j == 0) continue;
+            switch(map_char[y + j][x + i]){
+                case '#':
+                    draw_in_map(win, y + j, x + i, "#", ORANGE_TEXT, FALSE);
+                    break;
+                case 'F': case 'U': case 'G': case 'S': case 'D':
+                    char str[2];
+                    str[0] = map_char[y + j][x + i];
+                    str[1] = '\0';
+                    draw_in_map(win, y + j, x + i, str, LIGHT_YELLOW_TEXT, TRUE);
+                    break;
+            }
+        }
+    }
+    wrefresh(win);
+}
+
 void draw_player(Game *g, WINDOW* win){
     int x = g->player.now_loc.x;
     int y = g->player.now_loc.y;
@@ -810,6 +850,8 @@ void draw_player(Game *g, WINDOW* win){
 }
 
 void load_player_detail(Game* g){
+    // Top
+
     clear_part(stdscr, 1, 1, 1 , COLS-1);
     
     Player* player = &g->player;
@@ -849,6 +891,28 @@ void load_player_detail(Game* g){
     printw("%d", g->player.points);
 
     refresh();
+
+    // Set room visible
+    int x = g->player.now_loc.x, y = g->player.now_loc.y;
+    
+    Room* here_room;
+
+    for(int add_x = -2; add_x <= 2; add_x++){
+        for(int add_y = -2; add_y <= 2; add_y++){
+            here_room = get_room_by_loc(&g->map->main_levels[g->player.level], x + add_x, y + add_y);
+            int new_x = x + add_x;
+            int new_y = y + add_y;
+            
+            // بررسی معتبر بودن مختصات
+            if (new_x >= 0 && new_y >= 0) {
+                here_room = get_room_by_loc(&g->map->main_levels[g->player.level], new_x, new_y);
+                if (here_room && !here_room->is_visited) {
+                    here_room->is_visited = TRUE;
+                }
+            }
+        }
+    }
+
 }
 
 void show_msg(char * ms, int y, int x, int color, bool is_bold){
@@ -999,7 +1063,7 @@ void load_main_game(Game* g){
     
     UI_state state;
     state.enchant_menu_open = state.food_menu_open = state.weapon_menu_open = state.map_show_all = state.quit = FALSE;
-
+    state.visible_r = 2;
 
     draw_game_map(g, main_game, player->level, state);
     find_first_place(g, &g->player);
@@ -1018,11 +1082,12 @@ void load_main_game(Game* g){
     Loc last_place;
     while(1){
         last_place = g->player.now_loc;
-        handle_key(g, &state); 
         draw_game_map(g, main_game, player->level, state);
+        handle_key(g, &state); 
         draw_player(g, main_game);
-        
-        
+        show_visible_corridor(g, main_game, player->level, state.visible_r);
+        // get_object(g);
+        // show_enemys(g);
         load_player_detail(g);
         if(state.quit) break;
     }

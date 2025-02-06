@@ -227,6 +227,7 @@ typedef struct{
     bool enchant_menu_open;
     bool weapon_menu_open;
     bool quit;
+    int visible_r;
 } UI_state;
 
 typedef struct{
