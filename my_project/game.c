@@ -9,8 +9,12 @@
 
 #include "basic_loads.h"
 
+char top_details[4][50] = {
+    "Level","HP", "Golds", "Score"
+};
+
 // کمکی
-bool is_empty_room(Level level, Room room, Loc loc){
+bool is_empty_room(Level level, Loc loc){
     // mvaddch(1,1, level.map[loc.y][loc.x]);
     // refresh();
     // getch();
@@ -26,7 +30,7 @@ Loc find_empty_place_room(Level level, Room room, int padding){
         res.x = rand_in(room.e1.x+padding, room.e4.x-padding);
         res.y = rand_in(room.e1.y+padding, room.e4.y-padding);
         c--;
-        if(is_empty_room(level, room, res)) return res;
+        if(is_empty_room(level, res)) return res;
     }
     // res.x = rand_in(room.e1.x+1, room.e4.x-1);
     // res.y = rand_in(room.e1.y+1, room.e4.y-1);
@@ -35,6 +39,21 @@ Loc find_empty_place_room(Level level, Room room, int padding){
 
 void putch_map(Level* level, int y, int x, char ch) {
     level->map[y][x] = ch;
+}
+
+void find_first_place(Game* g, Player* p){
+    Room* room = g->map->main_levels[0].rooms;
+    Loc loc;
+    loc.x = room->e1.x + 1, loc.y = room->e1.y + 1;
+    while(!is_empty_room(g->map->main_levels[0], loc)){
+        loc.x++;
+        if(loc.x == room->e4.x){
+            loc.x = 1;
+            loc.y++;
+        }
+    }
+    p->now_loc.x = loc.x;
+    p->now_loc.y = loc.y;
 }
 
 void draw_in_map(WINDOW* win, int y, int x, char* str, int color, bool is_bold){
@@ -180,6 +199,17 @@ Enemy* get_enemy_by_loc(Level* level, int x, int y){
     return NULL;
 }
 
+bool can_go_loc(Game* g, int y, int x){
+    int level_num = g->player.level;
+    
+    switch(g->map->main_levels[level_num].map[y][x]){
+        case '_': case '|': case 'O': case ' ':
+            return FALSE;
+    }
+    if(y < 0 || x < 0) return FALSE;
+
+    return TRUE;
+}
 
 // توابع اصلی
 void initialize_map(Game* g){
@@ -189,7 +219,7 @@ void initialize_map(Game* g){
     int levels_num = 4;
     map->levels_num = levels_num;
     map->main_levels = (Level*)malloc(levels_num * sizeof(Level));
-    map->visited_levels = (Level*)malloc(levels_num * sizeof(Level));
+    // map->visited_levels = (Level*)malloc(levels_num * sizeof(Level));
     map->show_all = TRUE;
 
     int width = COLS - 22, height = 30;
@@ -342,36 +372,6 @@ void add_doors_to_room(int i, Room *room, int mode) {
          
     }
 }
-
-/*colors
-# : ORANGE_TEXT
-
-if(r->type == 1) color_id = PURPLE_TEXT;
-
-if(level_num == 3 && r->type == 2){
-    color_id = YELLOW_TEXT;
-}
-X : RED_TEXT
-// gold
-draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", YELLOW_TEXT, FALSE);
-draw_in_map(level, r->golds[j].loc.y, r->golds[j].loc.x, '$', "\u26c2", BLACK_TEXT, FALSE);
-// foods
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", LIGHT_GREEN_TEXT, FALSE);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", CYAN_TEXT, FALSE);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", LIGHT_YELLOW_TEXT, FALSE);
-draw_in_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N', "\u2299", RED_TEXT, FALSE);
-// enchents
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2695", PINK_TEXT, FALSE);
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u26f7", PINK_TEXT, FALSE);
-draw_in_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E', "\u2620", PINK_TEXT, FALSE);
-//weapon
-"𓌉"
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "⚔", WHITE_TEXT, FALSE);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🪄", WHITE_TEXT, FALSE);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "➳", WHITE_TEXT, FALSE);
-draw_in_map(level, r->weapons[j].loc.y, r->weapons[j].loc.x, 'w', "🗡", WHITE_TEXT, FALSE);
-
-*/
 
 void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
     
@@ -784,6 +784,120 @@ void draw_game_map(Game *g, WINDOW* win, int level_num){
     }
 }
 
+void draw_player(Game *g, WINDOW* win){
+    int x = g->player.now_loc.x;
+    int y = g->player.now_loc.y;
+    
+    g->map->main_levels[g->player.level].visited[y][x] = 1;
+    
+    int color = g->user->color_id;
+
+    wattron(win, A_BOLD | COLOR_PAIR(color));
+    mvwprintw(win, y, x, "@");
+    wrefresh(win);
+    wattroff(win, A_BOLD | COLOR_PAIR(color));
+    refresh();
+}
+
+void load_player_detail(Game* g){
+    clear_part(stdscr, 1, 1, 1 , COLS-1);
+    
+    Player* player = &g->player;
+    
+    // Level
+    attron(COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    mvprintw(1,COLS/2 - 10 - strlen(top_details[0])/2, "%s: ", top_details[0]);
+    attroff(COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    printw("%d", g->player.level + 1);
+    
+
+    // Health
+    attron(COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    mvprintw(1,COLS/2 + 10 - strlen(top_details[1])/2, "%s: ", top_details[1]);
+    attroff(COLOR_PAIR(LABEL_COLOR)| A_BOLD);
+
+    int color_health = LIGHT_GREEN_TEXT;
+    if(g->player.hp <= 15) color_health = RED_TEXT;
+    else if(g->player.hp <= 50) color_health = LIGHT_ORANGE_TEXT;
+
+    attron(COLOR_PAIR(color_health));
+    for(int i = 0; i < (g->player.hp)/10; i++){
+        printw("■");
+    }
+    attroff(COLOR_PAIR(color_health));
+
+    // Golds
+    attron(COLOR_PAIR(YELLOW_TEXT) | A_BOLD);
+    mvprintw(1,COLS/2 + 30, "%s: ", top_details[2]);
+    attroff(COLOR_PAIR(YELLOW_TEXT)| A_BOLD);
+    printw("%d", g->player.golds);
+
+    // score
+    attron(COLOR_PAIR(LABEL_COLOR) | A_BOLD);
+    mvprintw(1,COLS/2 + 45, "%s: ", top_details[3]);
+    attroff(COLOR_PAIR(LABEL_COLOR)| A_BOLD);
+    printw("%d", g->player.points);
+
+    refresh();
+}
+
+void show_msg(char * ms, int y, int x, int color, bool is_bold){
+    clear_part(stdscr, y, 1, y, COLS - 1);
+    if(is_bold) attron(A_BOLD);
+    
+    attron(COLOR_PAIR(color));
+    mvprintw(y,x, "%s", ms);
+    attroff(COLOR_PAIR(color));
+    if(is_bold) attroff(A_BOLD);
+
+    refresh();
+}
+
+void handle_key(Game* g, int* menu){
+    int ch = getch();
+    int x = g->player.now_loc.x, y = g->player.now_loc.y;
+    switch(ch){
+        // Movement
+        case KEY_UP:case 8:
+            y = g->player.now_loc.y - 1;
+            break;
+        case KEY_DOWN:case 2:
+            y = g->player.now_loc.y + 1;
+            break;
+        case KEY_RIGHT:case 6:
+            x = g->player.now_loc.x + 1;
+            break;
+        case KEY_LEFT:case 4:
+            x = g->player.now_loc.x - 1;
+            break;
+        case 9:
+            x = g->player.now_loc.x + 1;
+            y = g->player.now_loc.y - 1;
+            break;
+        case 3:
+            x = g->player.now_loc.x + 1;
+            y = g->player.now_loc.y + 1;
+            break;
+        case 1:
+            x = g->player.now_loc.x - 1;
+            y = g->player.now_loc.y + 1;
+            break;
+        case 7:
+            x = g->player.now_loc.x - 1;
+            y = g->player.now_loc.y - 1;
+            break;
+        
+        case 'q': case 'Q':
+            *menu = -1;
+
+    }
+
+    if(can_go_loc(g, y, x)){
+        g->player.now_loc.x = x;
+        g->player.now_loc.y = y;
+    }
+}
+
 void free_game(Game* g) {
     if (g == NULL || g->map == NULL)
         return;
@@ -815,28 +929,28 @@ void free_game(Game* g) {
     free(map->main_levels);
 
 
-    for (int i = 0; i < map->levels_num; i++) {
-        Level* level = &map->visited_levels[i];
+    // for (int i = 0; i < map->levels_num; i++) {
+    //     Level* level = &map->visited_levels[i];
 
-        if (level->map != NULL) {
-            for (int j = 0; j < map->height; j++) {
-                free(level->map[j]);
-            }
-            free(level->map);
-        }
+    //     if (level->map != NULL) {
+    //         for (int j = 0; j < map->height; j++) {
+    //             free(level->map[j]);
+    //         }
+    //         free(level->map);
+    //     }
 
-        if (level->visited != NULL) {
-            for (int j = 0; j < map->height; j++) {
-                free(level->visited[j]);
-            }
-            free(level->visited);
-        }
+    //     if (level->visited != NULL) {
+    //         for (int j = 0; j < map->height; j++) {
+    //             free(level->visited[j]);
+    //         }
+    //         free(level->visited);
+    //     }
 
-        if (level->rooms != NULL) {
-            free(level->rooms);
-        }
-    }
-    free(map->visited_levels);
+    //     if (level->rooms != NULL) {
+    //         free(level->rooms);
+    //     }
+    // }
+    // free(map->visited_levels);
 
     free(map);
     g->map = NULL;
@@ -848,18 +962,16 @@ void load_main_game(Game* g){
     start_color();
     game_initalize();
 
-    Player player;
-    player.level = 0;
-    player.hp = 100;
-    player.regen = 5;
-    player.hungriness = 0;
-    player.points = 0;
-    player.golds = 0;
+    Player* player = (Player *)malloc(sizeof(Player));
+    player->level = 0;
+    player->hp = 100;
+    player->regen = 5;
+    player->hungriness = 0;
+    player->points = 0;
+    player->golds = 0;
+    
 
-    player.now_loc.x = 0;
-    player.now_loc.y = 0;
-
-    g->player = player;
+    g->player = *player;
     initialize_map(g);
     make_random_map(g);
     
@@ -870,23 +982,41 @@ void load_main_game(Game* g){
     WINDOW* main_game = newwin(height, width, y_w, x_w);
     
 
-    draw_game_map(g, main_game, player.level);
-    
+    draw_game_map(g, main_game, player->level);
+    find_first_place(g, &g->player);
+    draw_player(g, main_game);
+
     refresh();
     box(main_game, 0, 0);
     wrefresh(main_game);
+    load_player_detail(g);
+    show_msg("Welcome!", 2, 2, WHITE_TEXT, TRUE);
+    show_msg("Use Arrow key in Num Pad to move. Q: Quit & Save", 3, 2, WHITE_TEXT, TRUE);
+    show_msg("E: Foods List / i: Weapons List / C: Enchants List", 4, 2, WHITE_TEXT, TRUE);
 
-    g->player.now_loc.x = g->map->main_levels[0].rooms[0].e1.x + 1;
-    g->player.now_loc.y = g->map->main_levels[0].rooms[0].e1.y + 1;
-    getch();
+    
+    
+    int menu;
+    Loc last_place;
+    while(1){
+        last_place = g->player.now_loc;
+        handle_key(g, &menu);
+        draw_game_map(g, main_game, player->level);
+        draw_player(g, main_game);
+        load_player_detail(g);
+
+        if(menu == -1) break;
+    }
     // while(1){
-        
-    //         // handle key -> move->f,g,orib?/menus->food(E), /map show(M)/quit menu(Q)
-    //         // load player loc
-    //         // giving objects in this loc -> delete from map, add to player
-            
+    
     //         // show visited parts
     //         // show visible area (if in corridor)
+    //         // show messages
+               // handle key -> move->f,g,orib?/menus->food(E), /map show(M)/quit menu(Q)
+    //         // load player loc
+    //         // giving objects in this loc -> delete from map, add to player
+                // load user details
+                // load enemies
     // }
     delwin(main_game);
     free_game(g);

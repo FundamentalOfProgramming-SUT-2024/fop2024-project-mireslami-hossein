@@ -27,6 +27,7 @@ enum CustomColors {
     CUSTOM_GREEN,
     CUSTOM_ORANGE,
     CUSTOM_ORANGE_2,
+    CUSTOM_ORANGE_3,
     CUSTOM_YELLOW,
     CUSTOM_BLACK,
     CUSTOM_LIGHT_GREEN,
@@ -52,6 +53,7 @@ enum ColorPairs {
     GREEN_TEXT_WHITE,
     GREEN_TEXT_YELLOW,
     CYAN_TEXT,
+    LIGHT_ORANGE_TEXT,
     ORANGE_TEXT,
     YELLOW_TEXT,
     PURPLE_TEXT,
@@ -196,7 +198,7 @@ typedef struct
 {
     int width, height;
     Level* main_levels;
-    Level* visited_levels;
+    // Level* visited_levels;
     int levels_num;
     
     bool show_all;
@@ -551,8 +553,9 @@ void game_initalize(){
     add_color_rgb(CUSTOM_CYAN, 151, 176, 243);
     add_color_rgb(CUSTOM_ORANGE, 255, 178, 131);
     add_color_rgb(CUSTOM_ORANGE_2, 175, 122, 0);
+    add_color_rgb(CUSTOM_ORANGE_3, 255, 133, 26);
     add_color_rgb(CUSTOM_YELLOW, 237, 214, 0);
-    add_color_rgb(CUSTOM_BLACK, 61, 42, 0);
+    add_color_rgb(CUSTOM_BLACK, 120, 117, 117);
     add_color_rgb(CUSTOM_LIGHT_GREEN, 79, 176, 23);
     add_color_rgb(CUSTOM_LIGHT_YELLOW, 249, 255, 81);
     add_color_rgb(CUSTOM_PINK, 190, 174, 255);
@@ -573,6 +576,7 @@ void game_initalize(){
     init_pair(GREEN_TEXT_YELLOW, COLOR_GREEN , CUSTOM_YELLOW);
     init_pair(CYAN_TEXT, COLOR_CYAN , COLOR_BLACK);
     init_pair(ORANGE_TEXT, CUSTOM_ORANGE_2 , COLOR_BLACK);
+    init_pair(LIGHT_ORANGE_TEXT, CUSTOM_ORANGE_3 , COLOR_BLACK);
     init_pair(YELLOW_TEXT, CUSTOM_YELLOW , COLOR_BLACK);
     init_pair(PURPLE_TEXT, COLOR_PURPLE , COLOR_BLACK);
     init_pair(RED_TEXT, COLOR_RED , COLOR_BLACK);
