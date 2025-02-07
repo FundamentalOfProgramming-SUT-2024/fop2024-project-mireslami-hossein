@@ -1585,11 +1585,12 @@ void free_game(Game* g) {
     g->map = NULL;
 }
 
+// Enemies
 double distance(Loc a, Loc b) {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
-void moveEnemy(Game* g, Enemy *enemy, Player player) {
+void move_enemy(Game* g, Enemy *enemy, Player player) {
     if (enemy->type == 0 || enemy->type == 1) {
         return;
     }
@@ -1600,18 +1601,42 @@ void moveEnemy(Game* g, Enemy *enemy, Player player) {
         }
     }
 
-    if (enemy->loc.x < player.now_loc.x) {
-        enemy->loc.x++;
-    } else if (enemy->loc.x > player.now_loc.x) {
-        enemy->loc.x--;
-    }
+    g->map->main_levels[g->player.level].map[enemy->loc.y][enemy->loc.x] = '.';
+    if(rand()%2 == 1){
 
-    if (enemy->loc.y < player.now_loc.y) {
-        enemy->loc.y++;
-    } else if (enemy->loc.y > player.now_loc.y) {
-        enemy->loc.y--;
+        if (enemy->loc.x < player.now_loc.x) {
+            enemy->loc.x++;
+        } else if (enemy->loc.x > player.now_loc.x) {
+            enemy->loc.x--;
+        }
+    } else {
+        if (enemy->loc.y < player.now_loc.y) {
+            enemy->loc.y++;
+        } else if (enemy->loc.y > player.now_loc.y) {
+            enemy->loc.y--;
+        }
     }
+    char ch;
+    if(enemy->type == 0) ch = 'D';
+    if(enemy->type == 1) ch = 'F';
+    if(enemy->type == 2) ch = 'G';
+    if(enemy->type == 3) ch = 'S';
+    if(enemy->type == 4) ch = 'U';
+    g->map->main_levels[g->player.level].map[enemy->loc.y][enemy->loc.x] = ch;
+}
 
+void show_enemies(Game* g){
+    Enemy* enems = g->map->main_levels[g->player.level].enemys;
+    Room* r = get_room_by_loc(&g->map->main_levels[g->player.level], g->player.now_loc.x, g->player.now_loc.y);
+    
+    for(int i = 0; i < MAX_ENEMY_LEVEL; i++){
+        Enemy* enemy = &enems[i];
+        Room* e_r = get_room_by_loc(&g->map->main_levels[g->player.level], enemy->loc.x, enemy->loc.y);
+        
+        if(r == e_r){
+            move_enemy(g, enemy, g->player);
+        }
+    }
 }
 
 void update_user_score(const char *username, int new_points, int new_golds) {
@@ -1916,7 +1941,7 @@ int load_main_game(Game* g){
         show_visible_corridor(g, main_game, g->player.level, state.visible_r, &state);
         get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
 
-        // show_enemis(g);
+        show_enemies(g);
         load_player_detail(g, &state, &round_counter);
 
 
