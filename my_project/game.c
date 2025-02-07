@@ -246,6 +246,77 @@ void clear_msgs(UI_state* state){
     }
     state->msg_num = 0;
 }
+
+void draw_food_window(Game* g, WINDOW* win, int width, int height) {
+    // رسم قاب اصلی پنجره
+    box(win, 0, 0);
+    refresh();
+    // نمایش عنوان یا میزان گرسنگی
+    print_title(win, "Hunger: ", 2, 3);
+    wmove(win, 2, width / 2);
+
+    Player* player = &g->player;
+
+    int color_id = RED_TEXT;
+    if (player->hungriness <= 15)
+        color_id = GREEN_TEXT;
+    else if (player->hungriness <= 50)
+        color_id = ORANGE_TEXT;
+
+    wattron(win, COLOR_PAIR(color_id));
+    // رسم نوار گرسنگی (هر واحد گرسنگی یک بلوک)
+    for (int i = 0; i < player->hungriness; i++) {
+        printw("■");
+    }
+    wattroff(win, COLOR_PAIR(color_id));
+
+    int num_food = player->foods_num; 
+    int box_height = 3;              
+    int box_width  = width - 4;       
+    int box_start_x = 2;             
+    int start_row = 5;               
+
+    for (int i = 0; i < num_food; i++) {
+        int box_start_y = start_row + i * (box_height + 1); // فاصله‌ی بین باکس‌ها یک ردیف
+
+        // رسم خط بالا (top border)
+        mvwhline(win, box_start_y, box_start_x, '-', box_width);
+        // رسم خط پایین (bottom border)
+        mvwhline(win, box_start_y + box_height - 1, box_start_x, '-', box_width);
+        // رسم خطوط کناری (left و right borders)
+        mvwvline(win, box_start_y, box_start_x, '|', box_height);
+        mvwvline(win, box_start_y, box_start_x + box_width - 1, '|', box_height);
+        // رسم گوشه‌ها
+        mvwaddch(win, box_start_y, box_start_x, '+');
+        mvwaddch(win, box_start_y, box_start_x + box_width - 1, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x + box_width - 1, '+');
+
+        // محاسبه‌ی ردیف میانی باکس (برای قرار دادن آیکون و تعداد)
+        int content_y = box_start_y + 1;
+
+
+        Food* food = &player->foods[i];
+        int color;
+        if(food->type == 0){
+            color = LIGHT_GREEN_TEXT;
+        } else if(food->type == 0){
+            color = CYAN_TEXT;
+        }else if(food->type == 0){
+            color = LIGHT_YELLOW_TEXT;
+        } else{
+            color = RED_TEXT;
+        }
+        draw_in_map(win, content_y, box_start_x + 2, "⊙", color, FALSE);
+
+        // چاپ تعداد غذا در سمت راست نزدیک به حاشیه
+        mvwprintw(win, content_y, box_start_x + box_width - 4, "%d", 1);
+    }
+
+    // به‌روزرسانی پنجره جهت نمایش تغییرات
+    wrefresh(win);
+}
+
 // توابع اصلی
 void initialize_map(Game* g){
     Map* map = malloc(sizeof(Map));
@@ -906,9 +977,8 @@ void draw_player(Game *g, WINDOW* win){
     refresh();
 }
 
-void load_player_detail(Game* g){
-    // Top
-
+void load_player_detail(Game* g, UI_state* state){
+    // Top of game page details
     clear_part(stdscr, 1, 1, 1 , COLS-1);
     
     Player* player = &g->player;
@@ -926,7 +996,8 @@ void load_player_detail(Game* g){
     attroff(COLOR_PAIR(LABEL_COLOR)| A_BOLD);
 
     int color_health = LIGHT_GREEN_TEXT;
-    if(g->player.hp <= 15) color_health = RED_TEXT;
+    if(g->player.hp <= 0) state->ended_game = TRUE;
+    else if(g->player.hp <= 15) color_health = RED_TEXT;
     else if(g->player.hp <= 50) color_health = LIGHT_ORANGE_TEXT;
 
     attron(COLOR_PAIR(color_health));
@@ -953,31 +1024,66 @@ void load_player_detail(Game* g){
     int x = g->player.now_loc.x, y = g->player.now_loc.y;
     
     Room* here_room;
-
+    bool room_found = FALSE;
     for(int add_x = -2; add_x <= 2; add_x++){
         for(int add_y = -2; add_y <= 2; add_y++){
-            here_room = get_room_by_loc(&g->map->main_levels[g->player.level], x + add_x, y + add_y);
+            if(room_found) continue;
             int new_x = x + add_x;
             int new_y = y + add_y;
             
-            // بررسی معتبر بودن مختصات
             if (new_x >= 0 && new_y >= 0) {
                 here_room = get_room_by_loc(&g->map->main_levels[g->player.level], new_x, new_y);
                 if (here_room && !here_room->is_visited) {
                     here_room->is_visited = TRUE;
+                    room_found = TRUE;
                 }
             }
         }
     }
+    
+    // Enchent Room
+    if(here_room && here_room -> type == 1){
+        int damage;
+        if(g->hardness <= 3){
+            damage = 1;
+        } else if(g->hardness <= 7){
+            damage = 3;
+        } else if(g->hardness <= 10){
+            damage = 4;
+        }
+        g->player.hp -= damage;
+    }
 
 }
 
-void handle_key(Game* g, UI_state* state){
+void get_food_here(Game *g, Level* level, int x, int y, UI_state* state){
+    if(g->player.foods_num < 5){
+        Room* r = get_room_by_loc(level, x, y);
+
+        Food* f = get_food_by_room(r, x, y);
+        f->loc.x = 0;
+        f->loc.y = 0;
+
+        level->map[y][x] = '.';
+        
+        g->player.foods[g->player.foods_num++] = *f; 
+    } else{
+        clear_msgs(state);
+        state->msg_num = 2;
+        strcpy(state->msg[0], "Your pack is full of food!");
+        strcpy(state->msg[1], "Eat one of foods!");
+        show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+        show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+    }
+}
+
+void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
     keypad(stdscr, TRUE);
     int ch = getch();
     int x = g->player.now_loc.x, y = g->player.now_loc.y;
     bool move = FALSE;
 
+    Level* level = &g->map->main_levels[g->player.level];
     char** map = g->map->main_levels[g->player.level].map;
     switch(ch){
         // Movement
@@ -1035,7 +1141,18 @@ void handle_key(Game* g, UI_state* state){
                 g->player.level--;
             }
             break;
-        
+        // Getting Things 
+        case 'g': case 'G':
+            // Food
+            if(map[y][x] == 'N'){
+                get_food_here(g, level, x, y, state);
+                state->food_menu_open = TRUE;
+            } else{
+                state->food_menu_open = state->food_menu_open == TRUE ? FALSE : TRUE;
+            }
+            break;
+
+
         case 'q': case 'Q':
             state->quit = TRUE;
             break;
@@ -1083,12 +1200,17 @@ void get_object(Game* g, int x, int y, UI_state* state){
             state->msg_num = 1;
             strcpy(state->msg[0], "Trap injured you!");
             show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
-            
+        // Food
+        case 'N':
+            clear_msgs(state);
+            state->msg_num = 2;
+            strcpy(state->msg[0], "You found a Food!");
+            strcpy(state->msg[1], "Press G To get");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+            break;
         // case 'W':
         //     break;
-        default:
-            break;
-
     }
 }
 
@@ -1139,6 +1261,7 @@ int load_main_game(Game* g){
     player->hungriness = 0;
     player->points = 0;
     player->golds = 0;
+    player->foods_num = 0;
     
 
     g->player = *player;
@@ -1150,7 +1273,14 @@ int load_main_game(Game* g){
     int y_w = LINES/2 - height/2;
 
     WINDOW* main_game = newwin(height, width, y_w, x_w);
-    
+
+    int startx = COLS - 22;       
+    int starty = (LINES / 2) - 15;  
+    int pack_width  = 20;              
+    int pack_height = 30;              
+
+    WINDOW *pack_box = newwin(pack_height, pack_width, starty, startx);
+
     UI_state state;
     state.enchant_menu_open = state.food_menu_open = state.weapon_menu_open = state.map_show_all = state.quit = state.ended_game = FALSE;
     state.visible_r = 2;
@@ -1162,7 +1292,7 @@ int load_main_game(Game* g){
     refresh();
     box(main_game, 0, 0);
     wrefresh(main_game);
-    load_player_detail(g);
+    load_player_detail(g, &state);
     
     state.msg_num = 3;
     strcpy(state.msg[0], "Welcome!");
@@ -1176,15 +1306,22 @@ int load_main_game(Game* g){
     while(1){
         last_place = g->player.now_loc;
 
-        handle_key(g, &state);
+        handle_key(g, &state, pack_box);
         clear_msgs(&state);
+        if(state.food_menu_open){
+            draw_food_window(g, pack_box, pack_width, pack_height);
+        }else{
+            clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
+        }
         draw_game_map(g, main_game, g->player.level, state);
         draw_player(g, main_game);
         show_visible_corridor(g, main_game, g->player.level, state.visible_r, &state);
         get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
 
         // show_enemis(g);
-        load_player_detail(g);
+        load_player_detail(g, &state);
+
+
         if(state.quit) break;
         else if(state.ended_game) return STATE_PREGAME;
     }

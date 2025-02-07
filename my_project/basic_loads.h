@@ -218,6 +218,7 @@ typedef struct {
     int golds;
 
     Food foods[5];
+    int foods_num;
     Weapon weapons[5];
     Weapon hand_weapon;
     Enchant enchants[5];
