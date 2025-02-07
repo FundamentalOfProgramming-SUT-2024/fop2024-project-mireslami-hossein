@@ -9,6 +9,8 @@
 
 #include "basic_loads.h"
 
+#include "game.h"
+
 char top_details[4][50] = {
     "Level","HP", "Golds", "Score"
 };
@@ -1112,7 +1114,7 @@ void free_game(Game* g) {
 }
 
 
-void load_main_game(Game* g){
+int load_main_game(Game* g){
     clear();
     start_color();
     game_initalize();
@@ -1174,4 +1176,5 @@ void load_main_game(Game* g){
     }
     delwin(main_game);
     free_game(g);
+    return STATE_END_GAME;
 }

@@ -9,7 +9,9 @@
 #include <locale.h>
 
 #include "basic_loads.h"
-#include "game.c"
+
+#include "pregame.h"
+
 
 char pregame_user_options[5][50] = {
     "New Game", "Load Game", "Leaderboard", "Settings" , "Profile"
@@ -374,7 +376,7 @@ bool show_profile(User *user) {
     }
 }
 
-void load_pregame_page(Game* g){
+int load_pregame_page(Game* g){
     clear();
     start_color();
     game_initalize();
@@ -417,23 +419,19 @@ void load_pregame_page(Game* g){
         exit(0);
         delwin(menu);
     } else if(pressed == -2){ // ESC to go back
-        load_first_page(g->user);
-        return;
+        return STATE_LOGIN;
     }
 
-
+    bool state = TRUE;
     if(selected == 0){ // New game
-        load_main_game(g);
         delwin(menu);
-        return;
+        return STATE_GAME;
     }else if(selected == 2 - g->user->is_guest){
-        show_leaderboard(*(g->user));
+        state = show_leaderboard(*(g->user));
     } else if(selected == 3 - g->user->is_guest){
-        show_setting(g);
+        state = show_setting(g);
     } else if(selected == 4 - g->user->is_guest){
-        show_profile(g->user);
+        state = show_profile(g->user);
     }
-    
-    load_pregame_page(g);
-    return;    
+    if(!state) return STATE_PREGAME;
 }

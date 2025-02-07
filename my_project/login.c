@@ -7,7 +7,7 @@
 #include <time.h>
 
 #include "basic_loads.h"
-
+#include "login.h"
 
 char entry_messages[3][50] = {
     "Welcome!", "Choose a way to continue:", "(ESC to go back)"
@@ -34,8 +34,6 @@ char login_form_buttons[1][50] = {
 char pass_form_labels[4][50] = {
     "Username: ", "Email: ", "Checker Word: ", "New password: "
 };
-
-void load_first_page(User* user);
 
 // Signup Validation
 void print_error_message(WINDOW* w, int height, int width,  int reset_y, int reset_x, char* ms){
@@ -537,8 +535,6 @@ void get_forgot_new_password(WINDOW* forgot_pass_win, int height, int width, int
     update_user_pass(*user);
     clear_part(forgot_pass_win, height-2, 1, height-2, width - 2);
 }
-
-void login_user(User* user);
 void password_forget_panel(int height, int width, int y_pass, int x_pass, User* user){
     clear();
     int y = LINES/2 - height/2;
@@ -724,7 +720,7 @@ void update_user_pass(User t_user){
     write_file("data/users.json", file_data);
 }
 
-void login_as_guest(User* user){
+int login_as_guest(User* user){
     user->is_guest = TRUE;
 }
 
@@ -773,7 +769,7 @@ bool load_user_data(User *user) {
     return found;
 }
 
-void login_user(User* user){
+int login_user(User* user){
     int width = 40, height = 25;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
@@ -799,12 +795,12 @@ void login_user(User* user){
     state = get_login_username(login_form, height, width, y_start, x_start, user->username);
     if(!state){
         load_first_page(user);
-        return;    
+        return STATE_EXIT;    
     }
     state = get_login_password(login_form, height, width, y_start + 2, x_start, user);
     if(!state){
         load_first_page(user);
-        return;    
+        return STATE_EXIT;    
     }
     user->is_guest = FALSE;
 
@@ -814,8 +810,7 @@ void login_user(User* user){
         print_buttons(login_form, login_form_buttons, 1, selected, y_start + 10, width/2, 1);
         handle_selected_btn(&selected, 1, &pressed);
         if(pressed == -1){
-            endwin();
-            exit(0);
+            return STATE_EXIT;
         }
         else if(pressed == 1){
             // Load User Data
@@ -827,7 +822,7 @@ void login_user(User* user){
     delwin(login_form);
 }
 
-void signup_user(User* user){
+int signup_user(User* user){
     int width = 50, height = 26;
     int y = LINES/2 - height/2;
     int x = COLS/2 - width/2;
@@ -853,20 +848,23 @@ void signup_user(User* user){
     state = get_sign_username(sign_form, height, width, y_start, x_start, user->username);
     if(!state){
         load_first_page(user);
-        return;    
+        return STATE_EXIT;    
     }
     state = get_sign_password(sign_form, height, width, y_start + 2, x_start, user->password);
     if(!state){
         load_first_page(user);
-        return;    
+        return STATE_EXIT;    
     }
     state = get_sign_email(sign_form, height, width, y_start + 4, x_start, user->email);
     if(!state){
         load_first_page(user);
-        return;    
+        return STATE_EXIT;    
     }
     state = get_sign_checker_word(sign_form, height, width, y_start + 6, x_start, user->checker_w);
-    
+    if(!state){
+        load_first_page(user);
+        return STATE_EXIT;    
+    }
     user->is_guest = FALSE;
 
     selected = 0;
@@ -884,8 +882,8 @@ void signup_user(User* user){
             }
             pressed = 0;
         } else if(pressed == -1){
-            endwin();
-            exit(0);
+            delwin(sign_form);
+            return STATE_EXIT;
         }
         refresh();
         wrefresh(sign_form);
@@ -907,7 +905,7 @@ void open_form(int selected, User* user){
     refresh();
 }
 
-void load_first_page(User* user){
+int load_first_page(User* user){
     clear();
 
     start_color();
@@ -935,11 +933,11 @@ void load_first_page(User* user){
     }
 
     if(exit_flag == -1 || exit_flag == -2){
-        endwin();
-        exit(0);
+        return STATE_EXIT;
     }
 
     delwin(menu);
 
     open_form(selected_btn, user);
+    return STATE_PREGAME;
 }
