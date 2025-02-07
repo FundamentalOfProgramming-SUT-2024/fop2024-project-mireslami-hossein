@@ -1582,6 +1582,35 @@ void free_game(Game* g) {
     g->map = NULL;
 }
 
+double distance(Loc a, Loc b) {
+    return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
+}
+
+void moveEnemy(Game* g, Enemy *enemy, Player player) {
+    if (enemy->type == 0 || enemy->type == 1) {
+        return;
+    }
+
+    if (enemy->type == 2 || enemy->type == 3) {
+        if (distance(enemy->loc, player.now_loc) > 5) {
+            return;
+        }
+    }
+
+    if (enemy->loc.x < player.now_loc.x) {
+        enemy->loc.x++;
+    } else if (enemy->loc.x > player.now_loc.x) {
+        enemy->loc.x--;
+    }
+
+    if (enemy->loc.y < player.now_loc.y) {
+        enemy->loc.y++;
+    } else if (enemy->loc.y > player.now_loc.y) {
+        enemy->loc.y--;
+    }
+
+}
+
 void draw_end_game_screen(Game *game, WINDOW *win, UI_state state) {
     // پاکسازی پنجره و رسم قاب بیرونی
     werase(win);

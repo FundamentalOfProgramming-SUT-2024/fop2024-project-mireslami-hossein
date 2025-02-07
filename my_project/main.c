@@ -41,7 +41,7 @@ int main(){
     
     game_initalize();
     
-    GameState state = STATE_GAME;  // شروع از صفحه لاگین
+    GameState state = STATE_LOGIN;  // شروع از صفحه لاگین
     int nextState;
 
     while (state != STATE_EXIT) {
