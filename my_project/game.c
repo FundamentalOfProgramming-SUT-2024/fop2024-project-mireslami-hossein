@@ -1133,13 +1133,12 @@ void show_visible_corridor(Game *g, WINDOW* win, int level_num, int visible_r, U
                     if(r) get_door_by_room(r, x + i ,y + j)->is_visible = TRUE;
                     break;
                 case 'X':
-                    if(state->msg_num == 0) break;
                     clear_msgs(state);
-                    state->msg_num = 1;
-                    strcpy(state->msg[0], "Be aware of Trap (X)!");
-                    show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
+                    // state->msg_num = 1;
+                    // strcpy(state->msg[0], "Be aware of Trap (X)!");
+                    // show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
 
-                    draw_in_map(win, y + j, x + i, "X", RED_TEXT, TRUE);
+                    // draw_in_map(win, y + j, x + i, "X", RED_TEXT, TRUE);
                     if(r) get_trap_by_room(r, x + i ,y + j)->visible = TRUE;
                     break;
             }
@@ -1941,7 +1940,7 @@ int load_main_game(Game* g){
         show_visible_corridor(g, main_game, g->player.level, state.visible_r, &state);
         get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
 
-        show_enemies(g);
+        // show_enemies(g);
         load_player_detail(g, &state, &round_counter);
 
 
