@@ -224,15 +224,18 @@ typedef struct {
 
     Weapon weapons[5];
     Weapon hand_weapon;
+    int weapons_num;
+
     Enchant enchants[5];
+    int enchants_num;
 } Player;
 
 
 typedef struct{
     bool map_show_all;
-    bool food_menu_open;
     bool enchant_menu_open;
     bool weapon_menu_open;
+    bool food_menu_open;
     bool quit;
     bool ended_game;
     int visible_r;
