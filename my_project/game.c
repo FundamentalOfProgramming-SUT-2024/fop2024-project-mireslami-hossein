@@ -248,9 +248,10 @@ void clear_msgs(UI_state* state){
 }
 
 void draw_food_window(Game* g, WINDOW* win, int width, int height, int selected) {
-
     box(win, 0, 0);
     refresh();
+    char title[50] = "Foods";
+    mvwprintw(win, 1, width/2 - strlen(title)/2, "%s", title);
     // نمایش عنوان یا میزان گرسنگی
     Player* player = &g->player;
 
@@ -302,12 +303,13 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height, int selected)
 
 
         Food* food = &player->foods[i];
+
         int color;
         if(food->type == 0){
             color = LIGHT_GREEN_TEXT;
         } else if(food->type == 1){
             color = CYAN_TEXT;
-        }else if(food->type == 2){
+        } else if(food->type == 2){
             color = LIGHT_YELLOW_TEXT;
         } else{
             color = RED_TEXT;
@@ -316,6 +318,65 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height, int selected)
 
         // چاپ تعداد غذا در سمت راست نزدیک به حاشیه
         mvwprintw(win, content_y, box_start_x + box_width - 4, "%d", 1);
+    }
+
+    // به‌روزرسانی پنجره جهت نمایش تغییرات
+    wrefresh(win);
+}
+
+void draw_weapon_window(Game* g, WINDOW* win, int width, int height, int selected) {
+    box(win, 0, 0);
+    refresh();
+
+    Player* player = &g->player;
+
+    int num_weapon = player->weapons_num;
+    int box_height = 3;
+    int box_width  = width - 4;       
+    int box_start_x = 2;
+    int start_row = 5;
+    char title[50] = "Weapons";
+    mvwprintw(win, 2, width/2 - strlen(title)/2, "%s", title);
+
+    for (int i = 0; i < num_weapon; i++) {
+        int box_start_y = start_row + i * (box_height + 1); // فاصله‌ی بین باکس‌ها یک ردیف
+        
+        if(i == selected) wattron(win, COLOR_PAIR(CYAN_TEXT));
+        // رسم خط بالا (top border)
+        mvwhline(win, box_start_y, box_start_x, '-', box_width);
+        // رسم خط پایین (bottom border)
+        mvwhline(win, box_start_y + box_height - 1, box_start_x, '-', box_width);
+        // رسم خطوط کناری (left و right borders)
+        mvwvline(win, box_start_y, box_start_x, '|', box_height);
+        mvwvline(win, box_start_y, box_start_x + box_width - 1, '|', box_height);
+        // رسم گوشه‌ها
+        mvwaddch(win, box_start_y, box_start_x, '+');
+        mvwaddch(win, box_start_y, box_start_x + box_width - 1, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x + box_width - 1, '+');
+
+        if(i == selected) wattroff(win, COLOR_PAIR(BTN_SELECTED));
+
+        // محاسبه‌ی ردیف میانی باکس (برای قرار دادن آیکون و تعداد)
+        int content_y = box_start_y + 1;
+
+
+        Weapon* weapon = &player->weapons[i];
+        char type[5];
+        if(weapon->type == 0){
+            strcpy(type, "𓌉");
+        } else if(weapon->type == 1){
+            strcpy(type, "⚔");
+        } else if(weapon->type == 2){
+            strcpy(type, "⚚");
+        } else if(weapon->type == 3){
+            strcpy(type, "➳");
+        } else{
+            strcpy(type, "🗡");
+        }
+        draw_in_map(win, content_y, box_start_x + 2, type, YELLOW_TEXT, FALSE);
+
+        mvwprintw(win, content_y, box_start_x + box_width - 4, "%d", weapon->num);
     }
 
     // به‌روزرسانی پنجره جهت نمایش تغییرات
@@ -907,9 +968,9 @@ void draw_game_map(Game *g, WINDOW* win, int level_num, UI_state state){
                         int color;
                         if(food->type == 0){
                             color = LIGHT_GREEN_TEXT;
-                        } else if(food->type == 0){
+                        } else if(food->type == 1){
                             color = CYAN_TEXT;
-                        }else if(food->type == 0){
+                        }else if(food->type == 2){
                             color = LIGHT_YELLOW_TEXT;
                         } else{
                             color = RED_TEXT;
@@ -1155,6 +1216,37 @@ void get_food_here(Game *g, Level* level, int x, int y, UI_state* state){
     }
 }
 
+void get_weopon_here(Game *g, Level* level, int x, int y, UI_state* state){
+    if(g->player.weapons_num < 5){
+        Room* r = get_room_by_loc(level, x, y);
+
+        Weapon* w = get_weapon_by_room(r, x, y);
+        w->loc.x = 0;
+        w->loc.y = 0;
+
+        level->map[y][x] = '.';
+        
+        bool added = false;
+        for(int i = 0; i < g->player.weapons_num; i++){
+            if(g->player.weapons[i].type == w->type){
+                g->player.weapons[i].num += w->num;
+                added = true;
+                break;
+            }
+        }
+        if(!added) g->player.weapons[g->player.weapons_num++] = *w;
+    } else{
+        clear_msgs(state);
+        state->msg_num = 2;
+        strcpy(state->msg[0], "Your pack is full of Weapon!");
+        strcpy(state->msg[1], "Change weapon by another!");
+        show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+        show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+        refresh();
+        state->food_menu_open = TRUE;
+    }
+}
+
 void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
     keypad(stdscr, TRUE);
     int ch = getch();
@@ -1225,10 +1317,19 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
             if(map[y][x] == 'N'){
                 get_food_here(g, level, x, y, state);
                 state->food_menu_open = TRUE;
+            } // Weapon
+            else if(map[y][x] == 'W'){
+                get_weopon_here(g, level, x, y, state);
+                state->weapon_menu_open = TRUE;
             }
+
             break;
         case 'e': case 'E':
             state->food_menu_open = (state->food_menu_open == TRUE) ? FALSE : TRUE;
+            break;
+        
+        case 'i': case 'I':
+            state->weapon_menu_open = (state->weapon_menu_open == TRUE) ? FALSE : TRUE;
             break;
         case 'q': case 'Q':
             state->quit = TRUE;
@@ -1286,8 +1387,21 @@ void get_object(Game* g, int x, int y, UI_state* state){
             show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
             show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
             break;
-        // case 'W':
-        //     break;
+        case 'W':
+            Weapon* wep = get_weapon_by_room(r, x, y);
+            char type[50];
+            if(wep->type == 1) strcpy(type, "You found a Dagger");
+            else if(wep->type == 2) strcpy(type, "You found a Magic Wood");
+            else if(wep->type == 3) strcpy(type, "You found a Normal Arrow");
+            else if(wep->type == 4) strcpy(type, "You found a Sword");
+
+            clear_msgs(state);
+            state->msg_num = 2;
+            strcpy(state->msg[0], type);
+            strcpy(state->msg[1], "Press G To get");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+            break;
     }
 }
 
@@ -1432,45 +1546,45 @@ int load_main_game(Game* g){
             clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
         }
         
-        // if(state.weapon_menu_open){
-        //     int pressed = 0;
-        //     int selected = 0;
-        //     int size = g->player.weapons_num;
-        //     while(!pressed){
-        //         draw_weapon_window(g, pack_box, pack_width, pack_height, selected);
-        //         int ch = getch();
-        //         switch (ch)
-        //         {
-        //         case KEY_UP:
-        //             (selected)--;
-        //             if(selected < 0) selected = size - 1;
-        //             break;
-        //         case KEY_DOWN:
-        //             (selected)++;
-        //             if(selected >= size) selected = 0;
-        //             break;
+        if(state.weapon_menu_open){
+            int pressed = 0;
+            int selected = 0;
+            int size = g->player.weapons_num;
+            while(!pressed){
+                draw_weapon_window(g, pack_box, pack_width, pack_height, selected);
+                int ch = getch();
+                switch (ch)
+                {
+                case KEY_UP:
+                    (selected)--;
+                    if(selected < 0) selected = size - 1;
+                    break;
+                case KEY_DOWN:
+                    (selected)++;
+                    if(selected >= size) selected = 0;
+                    break;
                 
-        //         case '\n': case 13:
-        //             pressed = 1;
-        //             break;
+                case '\n': case 13:
+                    pressed = 1;
+                    break;
                 
-        //         case 'w': case 'W':
-        //             pressed = -1;
-        //             break;
-        //         }
-        //     }
-        //     if(pressed == 1){
-        //         eat_food(g, selected, &state);
+                case 'i': case 'I':
+                    pressed = -1;
+                    break;
+                }
+            }
+            if(pressed == 1){
+                
             
-        //         state.weapon_menu_open = FALSE;
-        //     } else if(pressed == -1){
-        //         state.weapon_menu_open = FALSE;
-        //     }
-        // }
-        // if(!state.weapon_menu_open){
-        //     wclear(pack_box);
-        //     clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
-        // }
+                state.weapon_menu_open = FALSE;
+            } else if(pressed == -1){
+                state.weapon_menu_open = FALSE;
+            }
+        }
+        if(!state.weapon_menu_open){
+            wclear(pack_box);
+            clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
+        }
 
         draw_game_map(g, main_game, g->player.level, state);
         draw_player(g, main_game);
