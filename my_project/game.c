@@ -1241,7 +1241,10 @@ void load_player_detail(Game* g, UI_state* state, int* round){
         }
         g->player.hp -= damage;
     }
-
+    
+    if(here_room && here_room -> type == 2){
+        g->player.points += 50;
+    }
     // hungriness
     (*round)++;
 
@@ -1611,6 +1614,46 @@ void moveEnemy(Game* g, Enemy *enemy, Player player) {
 
 }
 
+void update_user_score(const char *username, int new_points, int new_golds) {
+    // خواندن فایل JSON
+    char* json_data = read_file("data/users.json");
+    // تجزیه JSON
+    
+    cJSON *root = cJSON_Parse(json_data);
+    free(json_data);
+    if (!root) {
+        printf("Error parsing JSON!\n");
+        return;
+    }
+
+    // دریافت آرایه کاربران
+    cJSON *users = cJSON_GetObjectItem(root, "users");
+    int user_count = cJSON_GetArraySize(users);
+
+    // جستجوی کاربر موردنظر
+    for (int i = 0; i < user_count; i++) {
+        cJSON *user = cJSON_GetArrayItem(users, i);
+        cJSON *user_name = cJSON_GetObjectItem(user, "username");
+
+        if (strcmp(user_name->valuestring, username) == 0) {
+            cJSON *points = cJSON_GetObjectItem(user, "points");
+            cJSON *golds = cJSON_GetObjectItem(user, "golds");
+            cJSON *ended_games = cJSON_GetObjectItem(user, "ended_games");
+
+            cJSON_SetIntValue(points, points->valueint + new_points);
+            cJSON_SetIntValue(golds, golds->valueint + new_golds);
+            cJSON_SetIntValue(ended_games, ended_games->valueint + 1);
+            break;
+        }
+    }
+
+    char *updated_json = cJSON_Print(root);
+    write_file("data/users.json", updated_json);
+
+    cJSON_Delete(root);
+    free(updated_json);
+}
+
 void draw_end_game_screen(Game *game, WINDOW *win, UI_state state) {
     // پاکسازی پنجره و رسم قاب بیرونی
     werase(win);
@@ -1883,6 +1926,7 @@ int load_main_game(Game* g){
     // return STATE_END_GAME;
     draw_end_game_screen(g, main_game, state);
     // delwin(main_game);
+    update_user_score(g->user->username, g->player.points, g->player.golds);
     return STATE_PREGAME;
     // free_game(g);
 }

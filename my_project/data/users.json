@@ -6,9 +6,9 @@
 			"email":	"m@g.c",
 			"checker_word":	"mir",
 			"rank":	1,
-			"points":	0,
-			"golds":	0,
-			"ended_games":	0,
+			"points":	200,
+			"golds":	20,
+			"ended_games":	1,
 			"lastgame_id":	-1,
 			"experience":	0,
 			"color_id":	11

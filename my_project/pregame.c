@@ -21,7 +21,7 @@ char pregame_guest_options[4][50] = {
 };
 
 char lb_titles[6][20] = {
-    "Rank", "Username", "Total Score","Total Golds", "Total Games", "Experience"
+    "Rank", "Username","Total Golds", "Total Score", "Total Games", "Experience"
 };
 char setting_lebels[2][50] = {
     "Player Color: ", "Game Hardness: "
