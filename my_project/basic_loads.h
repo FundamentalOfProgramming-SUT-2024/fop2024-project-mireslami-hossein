@@ -230,6 +230,7 @@ typedef struct{
     bool enchant_menu_open;
     bool weapon_menu_open;
     bool quit;
+    bool ended_game;
     int visible_r;
 
     char msg[3][50];

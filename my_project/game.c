@@ -895,7 +895,9 @@ void draw_player(Game *g, WINDOW* win){
     
     g->map->main_levels[g->player.level].visited[y][x] = 1;
     
-    int color = g->user->color_id;
+    int color;
+    if(g->user->color_id) color = g->user->color_id;
+    else color = WHITE_TEXT;
 
     wattron(win, A_BOLD | COLOR_PAIR(color));
     mvwprintw(win, y, x, "@");
@@ -1020,9 +1022,6 @@ void handle_key(Game* g, UI_state* state){
         case 'm': case 'M':
             state->map_show_all = (state->map_show_all) ? FALSE : TRUE;
             break;
-        case 'q': case 'Q':
-            state->quit = TRUE;
-            break;
 
         // stairs
         case '>':
@@ -1036,6 +1035,12 @@ void handle_key(Game* g, UI_state* state){
                 g->player.level--;
             }
             break;
+        
+        case 'q': case 'Q':
+            state->quit = TRUE;
+            break;
+        case KEY_ESC:
+            state->ended_game = TRUE;
     }
 
     if(move && can_go_loc(g, y, x)){
@@ -1047,6 +1052,7 @@ void handle_key(Game* g, UI_state* state){
 void get_object(Game* g, int x, int y, UI_state* state){
     char** map = g->map->main_levels[g->player.level].map;
     Room* r = get_room_by_loc(&g->map->main_levels[g->player.level], x, y);
+    Player* player = &g->player;
     switch(map[y][x]){
         case '$':
             Gold* gold = get_gold_by_room(r, x, y);
@@ -1070,7 +1076,14 @@ void get_object(Game* g, int x, int y, UI_state* state){
             show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
             show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
             break;
-        
+        case 'X':
+            player->hp -= 2 + g->hardness;
+
+            clear_msgs(state);
+            state->msg_num = 1;
+            strcpy(state->msg[0], "Trap injured you!");
+            show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
+            
         // case 'W':
         //     break;
         default:
@@ -1139,7 +1152,7 @@ int load_main_game(Game* g){
     WINDOW* main_game = newwin(height, width, y_w, x_w);
     
     UI_state state;
-    state.enchant_menu_open = state.food_menu_open = state.weapon_menu_open = state.map_show_all = state.quit = FALSE;
+    state.enchant_menu_open = state.food_menu_open = state.weapon_menu_open = state.map_show_all = state.quit = state.ended_game = FALSE;
     state.visible_r = 2;
 
     draw_game_map(g, main_game, player->level, state);
@@ -1170,9 +1183,10 @@ int load_main_game(Game* g){
         show_visible_corridor(g, main_game, g->player.level, state.visible_r, &state);
         get_object(g, g->player.now_loc.x, g->player.now_loc.y, &state);
 
-        // show_enemys(g);
+        // show_enemis(g);
         load_player_detail(g);
         if(state.quit) break;
+        else if(state.ended_game) return STATE_PREGAME;
     }
     delwin(main_game);
     free_game(g);

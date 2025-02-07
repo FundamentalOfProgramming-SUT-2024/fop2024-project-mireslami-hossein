@@ -322,7 +322,7 @@ bool show_setting(Game* g){
         get_game_hardness(g, set_w);
     }
 
-    return TRUE;
+    return FALSE;
 }
 
 bool show_profile(User *user) {
@@ -393,7 +393,7 @@ int load_pregame_page(Game* g){
 
     print_title(menu, "Game Menu", 2, width/2);
     // BACK hint
-    char ms[2][50] = {"Hint:", "Press Q anywhere to go back!"};
+    char ms[2][50] = {"Hint:", "Press ESC anywhere to go back!"};
     int x = width/2;
     int y = 6;
     
@@ -416,15 +416,13 @@ int load_pregame_page(Game* g){
         }
     }
     if(pressed == -1){
-        exit(0);
-        delwin(menu);
+        return STATE_LOGIN;
     } else if(pressed == -2){ // ESC to go back
         return STATE_LOGIN;
     }
 
     bool state = TRUE;
     if(selected == 0){ // New game
-        delwin(menu);
         return STATE_GAME;
     }else if(selected == 2 - g->user->is_guest){
         state = show_leaderboard(*(g->user));
@@ -433,5 +431,5 @@ int load_pregame_page(Game* g){
     } else if(selected == 4 - g->user->is_guest){
         state = show_profile(g->user);
     }
-    if(!state) return STATE_PREGAME;
+    return STATE_PREGAME;
 }
