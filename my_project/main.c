@@ -1,7 +1,7 @@
 /*
 To Run The GAME compile it by entering this command in terminal:
 
-gcc main.c login.c pregame.c game.c -o game.out -lncursesw -lcjson -lm && ./game.out
+gcc main.c login.c pregame.c game.c basic_loads.c -o game.out -lncursesw -lcjson -lm && ./game.out
 
 */ 
 
