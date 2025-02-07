@@ -383,6 +383,61 @@ void draw_weapon_window(Game* g, WINDOW* win, int width, int height, int selecte
     wrefresh(win);
 }
 
+void draw_enchants_window(Game* g, WINDOW* win, int width, int height, int selected) {
+    box(win, 0, 0);
+    refresh();
+
+    Player* player = &g->player;
+
+    int num_enchants = player->enchants_num;
+    int box_height = 3;
+    int box_width  = width - 4;       
+    int box_start_x = 2;
+    int start_row = 5;
+    char title[50] = "Ennchants";
+    mvwprintw(win, 2, width/2 - strlen(title)/2, "%s", title);
+
+    for (int i = 0; i < num_enchants; i++) {
+        int box_start_y = start_row + i * (box_height + 1); // فاصله‌ی بین باکس‌ها یک ردیف
+        
+        if(i == selected) wattron(win, COLOR_PAIR(CYAN_TEXT));
+        // رسم خط بالا (top border)
+        mvwhline(win, box_start_y, box_start_x, '-', box_width);
+        // رسم خط پایین (bottom border)
+        mvwhline(win, box_start_y + box_height - 1, box_start_x, '-', box_width);
+        // رسم خطوط کناری (left و right borders)
+        mvwvline(win, box_start_y, box_start_x, '|', box_height);
+        mvwvline(win, box_start_y, box_start_x + box_width - 1, '|', box_height);
+        // رسم گوشه‌ها
+        mvwaddch(win, box_start_y, box_start_x, '+');
+        mvwaddch(win, box_start_y, box_start_x + box_width - 1, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x, '+');
+        mvwaddch(win, box_start_y + box_height - 1, box_start_x + box_width - 1, '+');
+
+        if(i == selected) wattroff(win, COLOR_PAIR(BTN_SELECTED));
+
+        // محاسبه‌ی ردیف میانی باکس (برای قرار دادن آیکون و تعداد)
+        int content_y = box_start_y + 1;
+
+
+        Enchant* enchant = &player->enchants[i];
+        char type[5];
+        if(enchant->type == 0){
+            strcpy(type, "⚕");
+        } else if(enchant->type == 1){
+            strcpy(type, "⛷");
+        } else if(enchant->type == 2){
+            strcpy(type, "Ψ");
+        } 
+        draw_in_map(win, content_y, box_start_x + 2, type, YELLOW_TEXT, FALSE);
+
+        mvwprintw(win, content_y, box_start_x + box_width - 4, "%d", enchant->num);
+    }
+
+    // به‌روزرسانی پنجره جهت نمایش تغییرات
+    wrefresh(win);
+}
+
 void add_to_hp(Player* player, int hp){
     player->hp += hp;
     if(player->hp > 100) player->hp = 100;
@@ -770,12 +825,15 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
                 if (rand_num == 0){
                     r->enchants[j].type = 0;
                     r->enchants[j].HP_regen = 12;
+                    r->enchants[j].num = 1;
                 } else if (rand_num == 1){
                     r->enchants[j].type = 1;
                     r->enchants[j].speed = 2;
+                    r->enchants[j].num = 1;
                 } else if (rand_num == 2){
                     r->enchants[j].type = 2;
                     r->enchants[j].power = 2;
+                    r->enchants[j].num = 1;
                 }
                 r->enchants[j].time = 10;
                 putch_map(level, r->enchants[j].loc.y, r->enchants[j].loc.x, 'E');
@@ -1247,6 +1305,37 @@ void get_weopon_here(Game *g, Level* level, int x, int y, UI_state* state){
     }
 }
 
+void get_enchant_here(Game *g, Level* level, int x, int y, UI_state* state){
+    if(g->player.enchants_num < 5){
+        Room* r = get_room_by_loc(level, x, y);
+
+        Enchant* w = get_enchant_by_room(r, x, y);
+        w->loc.x = 0;
+        w->loc.y = 0;
+
+        level->map[y][x] = '.';
+        
+        bool added = false;
+        for(int i = 0; i < g->player.enchants_num; i++){
+            if(g->player.enchants[i].type == w->type){
+                g->player.enchants[i].num += w->num;
+                added = true;
+                break;
+            }
+        }
+        if(!added) g->player.enchants[g->player.enchants_num++] = *w;
+    } else{
+        clear_msgs(state);
+        state->msg_num = 2;
+        strcpy(state->msg[0], "Your pack is full of Enchant!");
+        strcpy(state->msg[1], "Eat one of them!");
+        show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+        show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+        refresh();
+        state->food_menu_open = TRUE;
+    }
+}
+
 void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
     keypad(stdscr, TRUE);
     int ch = getch();
@@ -1321,6 +1410,9 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
             else if(map[y][x] == 'W'){
                 get_weopon_here(g, level, x, y, state);
                 state->weapon_menu_open = TRUE;
+            } else if(map[y][x] == 'E'){
+                get_enchant_here(g, level, x, y, state);
+                state->enchant_menu_open = TRUE;
             }
 
             break;
@@ -1330,6 +1422,10 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
         
         case 'i': case 'I':
             state->weapon_menu_open = (state->weapon_menu_open == TRUE) ? FALSE : TRUE;
+            break;
+            
+        case 'c': case 'C':
+            state->enchant_menu_open = (state->enchant_menu_open == TRUE) ? FALSE : TRUE;
             break;
         case 'q': case 'Q':
             state->quit = TRUE;
@@ -1398,6 +1494,22 @@ void get_object(Game* g, int x, int y, UI_state* state){
             clear_msgs(state);
             state->msg_num = 2;
             strcpy(state->msg[0], type);
+            strcpy(state->msg[1], "Press G To get");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+            break;
+            
+        case 'E':
+            Enchant* en = get_enchant_by_room(r, x, y);
+            char type_E[50];
+            if(en->type == 0) strcpy(type_E, "You found a Health Enchant");
+            else if(en->type == 1) strcpy(type_E, "You found a Speed Enchant");
+            else if(en->type == 2) strcpy(type_E, "You found a Damage Enchant");
+            
+
+            clear_msgs(state);
+            state->msg_num = 2;
+            strcpy(state->msg[0], type_E);
             strcpy(state->msg[1], "Press G To get");
             show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
             show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
@@ -1541,10 +1653,6 @@ int load_main_game(Game* g){
                 state.food_menu_open = FALSE;
             }
         }
-        if(!state.food_menu_open){
-            wclear(pack_box);
-            clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
-        }
         
         if(state.weapon_menu_open){
             int pressed = 0;
@@ -1574,14 +1682,51 @@ int load_main_game(Game* g){
                 }
             }
             if(pressed == 1){
-                
+                // CHANGE Weap
             
                 state.weapon_menu_open = FALSE;
             } else if(pressed == -1){
                 state.weapon_menu_open = FALSE;
             }
         }
-        if(!state.weapon_menu_open){
+
+        if(state.enchant_menu_open){
+            int pressed = 0;
+            int selected = 0;
+            int size = g->player.enchants_num;
+            while(!pressed){
+                draw_enchants_window(g, pack_box, pack_width, pack_height, selected);
+                int ch = getch();
+                switch (ch)
+                {
+                case KEY_UP:
+                    (selected)--;
+                    if(selected < 0) selected = size - 1;
+                    break;
+                case KEY_DOWN:
+                    (selected)++;
+                    if(selected >= size) selected = 0;
+                    break;
+                
+                case '\n': case 13:
+                    pressed = 1;
+                    break;
+                
+                case 'c': case 'C':
+                    pressed = -1;
+                    break;
+                }
+            }
+            if(pressed == 1){
+                // EAt enchant
+            
+                state.enchant_menu_open = FALSE;
+            } else if(pressed == -1){
+                state.enchant_menu_open = FALSE;
+            }
+        }
+
+        if(!state.enchant_menu_open && !state.food_menu_open && !state.weapon_menu_open){
             wclear(pack_box);
             clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
         }

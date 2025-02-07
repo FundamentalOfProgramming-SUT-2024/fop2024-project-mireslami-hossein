@@ -99,6 +99,7 @@ typedef struct
     int speed;
     int power; // power: 2 means two times damage
     
+    int num;
     int time; //10 at first
     Loc loc;
 } Enchant;
