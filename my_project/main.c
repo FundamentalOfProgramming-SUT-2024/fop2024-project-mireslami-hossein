@@ -66,6 +66,6 @@ int main(){
     }
 
     return 0;
-
+    clear();
     endwin();
 }

@@ -1,5 +1,5 @@
 {
-	"users_number":	7,
+	"users_number":	8,
 	"users":	[{
 			"username":	"a1",
 			"password":	"Mire809",
@@ -78,6 +78,18 @@
 			"email":	"m@g.c",
 			"checker_word":	"mir",
 			"rank":	7,
+			"points":	0,
+			"golds":	0,
+			"ended_games":	0,
+			"lastgame_id":	-1,
+			"experience":	0,
+			"color_id":	9
+		}, {
+			"username":	"a10",
+			"password":	"",
+			"email":	"m@g.c",
+			"checker_word":	"Mir",
+			"rank":	8,
 			"points":	0,
 			"golds":	0,
 			"ended_games":	0,

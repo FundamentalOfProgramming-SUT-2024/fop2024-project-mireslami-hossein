@@ -721,6 +721,7 @@ void update_user_pass(User t_user){
 }
 
 int login_as_guest(User* user){
+    reset_user_data(user);
     user->is_guest = TRUE;
 }
 
