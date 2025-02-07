@@ -1249,6 +1249,8 @@ void load_player_detail(Game* g, UI_state* state, int* round){
         add_to_hp(player, player->regen);
     }
     if((*round)%5 == 0) player->hungriness+= g->hardness/3 + 2;
+
+    if(player->hp <= 0) state->quit = TRUE;
 }
 
 void get_food_here(Game *g, Level* level, int x, int y, UI_state* state){
@@ -1344,6 +1346,7 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
 
     Level* level = &g->map->main_levels[g->player.level];
     char** map = g->map->main_levels[g->player.level].map;
+    int cha;
     switch(ch){
         // Movement
         case KEY_UP:case '8':
@@ -1382,7 +1385,35 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
             y = g->player.now_loc.y - 1;
             move = TRUE;
             break;
-        
+        case 'f':
+            cha = getch();
+            move = TRUE;
+            x = g->player.now_loc.x;
+            y = g->player.now_loc.y;
+            switch(cha){
+            // Movement
+            case KEY_UP:case '8':
+                while(can_go_loc(g, y-1, x)){
+                    y--;
+                }
+                break;
+            case KEY_DOWN:case '2':
+                while(can_go_loc(g, y+1, x)){
+                    y++;
+                }
+                break;
+            case KEY_RIGHT:case '6':
+                while(can_go_loc(g, y, x+1)){
+                    x++;
+                }
+                break;
+            case KEY_LEFT:case '4':
+                while(can_go_loc(g, y, x-1)){
+                    x--;
+                }
+                break;
+            }
+            break;
         // Show map
         case 'm': case 'M':
             state->map_show_all = (state->map_show_all) ? FALSE : TRUE;
@@ -1391,7 +1422,7 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
         // stairs
         case '>':
             if(map[y][x] == '>'){
-                if(g->player.level == 3) state->quit = TRUE;
+                if(g->player.level == 3) state->ended_game = TRUE;
                 else g->player.level++;
             }
             break;
@@ -1551,6 +1582,83 @@ void free_game(Game* g) {
     g->map = NULL;
 }
 
+void draw_end_game_screen(Game *game, WINDOW *win, UI_state state) {
+    // پاکسازی پنجره و رسم قاب بیرونی
+    werase(win);
+    box(win, 0, 0);
+
+    int height, width;
+    getmaxyx(win, height, width);
+
+    // نمایش عنوان اصلی (Game Over / You Win) با رنگ و استایل
+    char title[50];
+    if (state.quit == TRUE)
+        strcpy(title, "GAME OVER");
+    else if (state.ended_game == TRUE)
+        strcpy(title, "YOU WIN");
+    
+    wattron(win, A_BOLD | COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, 1, (width - strlen(title)) / 2, "%s", title);
+    wattroff(win, A_BOLD | COLOR_PAIR(LABEL_COLOR));
+
+    // رسم خط افقی زیر عنوان
+    wattron(win, A_BOLD);
+    mvwhline(win, 2, 2, ACS_HLINE, width - 4);
+    wattroff(win, A_BOLD);
+
+    // تنظیم محل شروع نمایش اطلاعات
+    int row = 4;
+    int labelCol = 5;
+    int valueCol = width / 2 + 5;
+
+    // نمایش نام کاربر
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row, labelCol, "User:");
+    wattroff(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row++, valueCol, "%s", game->user->is_guest ? "Guest" : game->user->username);
+
+    // رسم خط جداکننده بعد از اطلاعات کاربر
+    mvwhline(win, row++, 2, ACS_HLINE, width - 4);
+
+    // نمایش امتیاز
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row, labelCol, "Score:");
+    wattroff(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row++, valueCol, "%d", game->player.points);
+
+    // نمایش تعداد طلا
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row, labelCol, "Gold:");
+    wattroff(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row++, valueCol, "%d", game->player.golds);
+
+    // رسم خط جداکننده بین اطلاعات امتیاز و بازی
+    mvwhline(win, row++, 2, ACS_HLINE, width - 4);
+
+    // نمایش سختی بازی
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row, labelCol, "Hardness:");
+    wattroff(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row++, valueCol, "%d", game->hardness);
+
+    // نمایش شماره سطح
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row, labelCol, "Level:");
+    wattroff(win, COLOR_PAIR(LABEL_COLOR));
+    mvwprintw(win, row++, valueCol, "%d", game->player.level);
+
+    // رسم خط پایین برای جدا کردن محتوا از دکمه خروج
+    mvwhline(win, row++, 2, ACS_HLINE, width - 4);
+
+    // نمایش پیام خروج
+    wattron(win, A_BOLD);
+    mvwprintw(win, row+2, (width - 20) / 2, "Press any key to exit...");
+    wattroff(win, A_BOLD);
+
+    // به‌روزرسانی پنجره
+    wrefresh(win);
+    getch(); // انتظار برای ورودی از کاربر
+}
 
 int load_main_game(Game* g){
     clear();
@@ -1740,10 +1848,12 @@ int load_main_game(Game* g){
         load_player_detail(g, &state, &round_counter);
 
 
-        if(state.quit) break;
-        else if(state.ended_game) return STATE_PREGAME;
+        if(state.quit || state.ended_game) break;
+        // else if(state.ended_game) return STATE_PREGAME;
     }
-    delwin(main_game);
-    free_game(g);
-    return STATE_END_GAME;
+    // return STATE_END_GAME;
+    draw_end_game_screen(g, main_game, state);
+    // delwin(main_game);
+    return STATE_PREGAME;
+    // free_game(g);
 }
