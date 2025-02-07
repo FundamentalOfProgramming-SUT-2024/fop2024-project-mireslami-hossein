@@ -247,15 +247,16 @@ void clear_msgs(UI_state* state){
     state->msg_num = 0;
 }
 
-void draw_food_window(Game* g, WINDOW* win, int width, int height) {
-    // رسم قاب اصلی پنجره
+void draw_food_window(Game* g, WINDOW* win, int width, int height, int selected) {
+
     box(win, 0, 0);
     refresh();
     // نمایش عنوان یا میزان گرسنگی
-    print_title(win, "Hunger: ", 2, 3);
-    wmove(win, 2, width / 2);
-
     Player* player = &g->player;
+
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
+    print_title(win, "Hunger: ", 2, 3);
+    wattron(win, COLOR_PAIR(LABEL_COLOR));
 
     int color_id = RED_TEXT;
     if (player->hungriness <= 15)
@@ -263,7 +264,7 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height) {
     else if (player->hungriness <= 50)
         color_id = ORANGE_TEXT;
 
-    wattron(win, COLOR_PAIR(color_id));
+    wmove(win, 2, width / 2);
     // رسم نوار گرسنگی (هر واحد گرسنگی یک بلوک)
     for (int i = 0; i < player->hungriness; i++) {
         printw("■");
@@ -275,10 +276,10 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height) {
     int box_width  = width - 4;       
     int box_start_x = 2;             
     int start_row = 5;               
-
     for (int i = 0; i < num_food; i++) {
         int box_start_y = start_row + i * (box_height + 1); // فاصله‌ی بین باکس‌ها یک ردیف
-
+        
+        if(i == selected) wattron(win, COLOR_PAIR(CYAN_TEXT));
         // رسم خط بالا (top border)
         mvwhline(win, box_start_y, box_start_x, '-', box_width);
         // رسم خط پایین (bottom border)
@@ -291,6 +292,8 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height) {
         mvwaddch(win, box_start_y, box_start_x + box_width - 1, '+');
         mvwaddch(win, box_start_y + box_height - 1, box_start_x, '+');
         mvwaddch(win, box_start_y + box_height - 1, box_start_x + box_width - 1, '+');
+
+        if(i == selected) wattroff(win, COLOR_PAIR(BTN_SELECTED));
 
         // محاسبه‌ی ردیف میانی باکس (برای قرار دادن آیکون و تعداد)
         int content_y = box_start_y + 1;
@@ -315,6 +318,59 @@ void draw_food_window(Game* g, WINDOW* win, int width, int height) {
 
     // به‌روزرسانی پنجره جهت نمایش تغییرات
     wrefresh(win);
+}
+
+void add_to_hp(Player* player, int hp){
+    player->hp += hp;
+    if(player->hp > 100) player->hp = 100;
+}
+
+void eat_food(Game* g, int selected, UI_state* state){
+    Food* f = &g->player.foods[selected];
+    mvprintw(0,0,"food: hp: %d type: %d", f->HP, f->type);
+    refresh();
+    switch(f->type){
+        case 0:
+            clear_msgs(state);
+            state->msg_num = 1;
+            strcpy(state->msg[0], "You Ate a DELICIOUS food!😋");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+
+            add_to_hp(&g->player, f->HP);
+            break;
+        case 1:
+            clear_msgs(state);
+            state->msg_num = 1;
+            strcpy(state->msg[0], "You Ate a MAGIC food!😲");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            
+            g->player.speed += f->speed;
+            add_to_hp(&g->player, f->HP);
+            break;
+        case 2:
+            clear_msgs(state);
+            state->msg_num = 1;
+            strcpy(state->msg[0], "You Ate a PERFECT food!😋");
+            show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
+            
+            add_to_hp(&g->player, f->HP);
+            g->player.power += f->power;
+            break;
+        case 3:
+            clear_msgs(state);
+            state->msg_num = 1;
+            strcpy(state->msg[0], "You Ate a BAD food!🤮");
+            show_msg(state->msg[0], 2, 2, RED_TEXT, TRUE);
+
+            add_to_hp(&g->player, f->HP);
+            break;
+        
+
+    }
+    
+    g->player.speed += f->speed;
+    delete_array(g->player.foods, g->player.foods_num, selected, sizeof(Food));
+    g->player.foods_num--;
 }
 
 // توابع اصلی
@@ -625,7 +681,7 @@ void make_rooms_and_corridors(Game* g, int h, int w, Map* map, int level_num){
                 r->foods[j].time = 15;
             } else { // Bad
                 r->foods[j].type = 3;
-                r->foods[j].HP = -50;
+                r->foods[j].HP = -15;
                 r->foods[j].time = 0;
             }
             putch_map(level, r->foods[j].loc.y, r->foods[j].loc.x, 'N');
@@ -1074,6 +1130,7 @@ void get_food_here(Game *g, Level* level, int x, int y, UI_state* state){
         strcpy(state->msg[1], "Eat one of foods!");
         show_msg(state->msg[0], 2, 2, WHITE_TEXT, TRUE);
         show_msg(state->msg[1], 3, 2, WHITE_TEXT, TRUE);
+        state->food_menu_open = TRUE;
     }
 }
 
@@ -1147,12 +1204,11 @@ void handle_key(Game* g, UI_state* state, WINDOW* pack_box){
             if(map[y][x] == 'N'){
                 get_food_here(g, level, x, y, state);
                 state->food_menu_open = TRUE;
-            } else{
-                state->food_menu_open = state->food_menu_open == TRUE ? FALSE : TRUE;
             }
             break;
-
-
+        case 'e': case 'E':
+            state->food_menu_open = (state->food_menu_open == TRUE) ? FALSE : TRUE;
+            break;
         case 'q': case 'Q':
             state->quit = TRUE;
             break;
@@ -1262,7 +1318,8 @@ int load_main_game(Game* g){
     player->points = 0;
     player->golds = 0;
     player->foods_num = 0;
-    
+    player->speed = 1;
+    player->power = 0;
 
     g->player = *player;
     initialize_map(g);
@@ -1308,9 +1365,44 @@ int load_main_game(Game* g){
 
         handle_key(g, &state, pack_box);
         clear_msgs(&state);
+        
         if(state.food_menu_open){
-            draw_food_window(g, pack_box, pack_width, pack_height);
-        }else{
+            int pressed = 0;
+            int selected = 0;
+            int size = g->player.foods_num;
+            while(!pressed){
+                draw_food_window(g, pack_box, pack_width, pack_height, selected);
+                int ch = getch();
+                switch (ch)
+                {
+                case KEY_UP:
+                    (selected)--;
+                    if(selected < 0) selected = size - 1;
+                    break;
+                case KEY_DOWN:
+                    (selected)++;
+                    if(selected >= size) selected = 0;
+                    break;
+                
+                case '\n': case 13:
+                    pressed = 1;
+                    break;
+                
+                case 'e': case 'E':
+                    pressed = -1;
+                    break;
+                }
+            }
+            if(pressed == 1){
+                eat_food(g, selected, &state);
+            
+                state.food_menu_open = FALSE;
+            } else if(pressed == -1){
+                state.food_menu_open = FALSE;
+            }
+        }
+        if(!state.food_menu_open){
+            wclear(pack_box);
             clear_part(stdscr, starty, startx + 1, starty + pack_height, startx + pack_width);
         }
         draw_game_map(g, main_game, g->player.level, state);

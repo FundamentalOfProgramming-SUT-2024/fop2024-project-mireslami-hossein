@@ -1,4 +1,5 @@
 #include "basic_loads.h"
+
 // graphics
 void add_color_rgb(int id, int r, int g, int b){
     start_color();
@@ -12,6 +13,24 @@ void clear_part(WINDOW* w, int y1, int x1, int y2, int x2){
         }
     }
     wrefresh(w);
+}
+
+void delete_array(void *array, size_t count, size_t index, size_t element_size) {
+    // بررسی معتبر بودن اندیس
+    if (index >= count) {
+        return; // اندیس اشتباه است؛ خروج از تابع
+    }
+
+    // تبدیل اشاره‌گر عمومی به اشاره‌گر به char (برای عملیات بایت به بایت)
+    char *ptr = (char *)array;
+
+    // انتقال حافظه: از اندیس index+1 تا انتهای آرایه را به اندازه یک عنصر به چپ شیفت می‌دهد.
+    memmove(ptr + index * element_size,
+            ptr + (index + 1) * element_size,
+            (count - index - 1) * element_size);
+
+    // پاکسازی آخرین عنصر (اختیاری)
+    memset(ptr + (count - 1) * element_size, 0, element_size);
 }
 
 void print_title(WINDOW* w, char* title, int y, int x){

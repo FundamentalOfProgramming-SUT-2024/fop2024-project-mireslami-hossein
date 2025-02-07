@@ -212,6 +212,8 @@ typedef struct {
     int hp;
     int regen;
     int hungriness;
+    int power;
+    int speed; // 1 : default, 2: fastest 
     int level;
 
     int points;
@@ -219,6 +221,7 @@ typedef struct {
 
     Food foods[5];
     int foods_num;
+
     Weapon weapons[5];
     Weapon hand_weapon;
     Enchant enchants[5];
@@ -272,6 +275,8 @@ int max(int a, int b);
 bool is_upper(char c);
 bool is_lower(char c);
 bool is_digit(char c);
+
+void delete_array(void *array, size_t count, size_t index, size_t element_size);
 
 // Files
 char* read_file(char* path);
